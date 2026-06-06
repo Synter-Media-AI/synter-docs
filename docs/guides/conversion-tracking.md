@@ -1,6 +1,78 @@
 # Conversion Tracking
 
-Unified conversion tracking across all ad platforms with automatic click ID detection.
+Unified conversion tracking across all ad platforms — server-side pixel forwarding and automatic click ID detection.
+
+## Overview
+
+There are two ways to get conversion data into your ad platforms with Synter:
+
+1. **Pixel Destinations** (recommended) — Install the Synter JS pixel on your site. Synter captures every event server-side and forwards it to your connected ad platforms automatically.
+2. **SDK / API** — Call `synter.conversions.create()` directly from your backend on each conversion event.
+
+---
+
+## Pixel Destinations (Server-Side Forwarding)
+
+Install the Synter pixel once and route events to any number of ad platforms without touching each platform's SDK.
+
+### How It Works
+
+1. Add the Synter pixel to your site (one-time).
+2. Go to **Settings → Tracking → Destinations** and add each ad platform.
+3. Provide the required setting (pixel ID, conversion rule ID, etc.) for each platform.
+4. Synter forwards every captured event to each platform's CAPI automatically.
+
+### Required Settings Per Platform
+
+| Platform | Required Setting | Where to Find It |
+|---|---|---|
+| Meta | `pixel_id` (15–16 digit number) | Meta Business Suite → Events Manager → Pixels |
+| Google Ads | `pixel_id` (format: `AW-XXXXXXXXXX`) | Google Ads → Goals → Conversions → Tag setup |
+| LinkedIn | `conversion_rule_id` (numeric) | Campaign Manager → Analyze → Conversion tracking → click rule → URL |
+| Reddit | `pixel_id` (format: `a2_XXXXXXXXXXXX`) | Reddit Ads → Events → Pixel, or `rdt('init', ...)` on your site |
+| TikTok | `pixel_code` (alphanumeric) | TikTok Ads Manager → Assets → Events → Web Events |
+| Microsoft | `pixel_id` (numeric) | Microsoft Ads → Conversion tracking |
+| Snapchat | `pixel_id` (UUID) | Snapchat Ads Manager → Events Manager |
+| Pinterest | `pixel_id` (numeric) | Pinterest Ads → Conversions |
+| X | `pixel_id` + `consumer_key` | X Ads → Events Manager |
+
+**LinkedIn note:** Use the **conversion rule ID**, not the Insight Tag ID — they are different numbers. The rule must have method set to "Conversions API" in Campaign Manager.
+
+**Reddit note:** The pixel ID is the same as your Reddit Ads advertiser account ID (`a2_XXXXXXXXXXXX`).
+
+**TikTok note:** The setting key is `pixel_code`, not `pixel_id`.
+
+### Verifying a Destination
+
+After setup, verify each destination to confirm your credentials and settings are correct:
+
+```
+POST /api/pixel/sites/{pixelId}/destinations/verify
+Content-Type: application/json
+
+{}                           // verify all enabled destinations
+{ "destination_id": 10 }    // verify one specific destination
+```
+
+Verification sends a safe probe to the platform (a test event or read-only check) that never affects your real conversion counts. The result is recorded as `verified_at` on the destination — if it fails, `last_verification_error` explains why.
+
+You can also ask the Synter agent: *"Verify my conversion tracking destinations"*.
+
+### Event Name Mapping
+
+Synter maps canonical pixel event names to each platform's event types:
+
+| Pixel Event | Meta | LinkedIn | Reddit | TikTok |
+|---|---|---|---|---|
+| `signup` / `sign_up` | `CompleteRegistration` | `SIGN_UP` | `SIGN_UP` | `CompleteRegistration` |
+| `purchase` | `Purchase` | `PURCHASE` | `PURCHASE` | `PlaceAnOrder` |
+| `lead` / `demo_request` | `Lead` | `LEAD_GENERATION` | `LEAD` | `SubmitForm` |
+| `trial` / `start_trial` | `StartTrial` | `SIGN_UP` | `SIGN_UP` | `Subscribe` |
+| `page_view` | `PageView` | — | `PAGE_VISIT` | `ViewContent` |
+
+Events with no mapping for a given platform are skipped silently — they don't cause errors or block other platforms.
+
+---
 
 ## Overview
 
