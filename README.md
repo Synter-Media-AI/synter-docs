@@ -10,6 +10,7 @@ Ship ads like you ship code. One SDK for Google Ads, Reddit Ads, LinkedIn Ads, M
 - [TypeScript SDK](./sdk/typescript/README.md) - Full API reference for Node.js/TypeScript
 - [Python SDK](./sdk/python/README.md) - Full API reference for Python
 - [Guides](./docs/guides/README.md) - UTM management, conversions, agents
+- [Claude Plugin](./docs/guides/claude-plugin.md) - Run Synter inside Claude Code / Claude Desktop
 
 ## 🚀 Quick Install
 
