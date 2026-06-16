@@ -7,6 +7,7 @@ In-depth guides for using Synter effectively.
 - [UTM Management](./utm-management.md) - Auto-generated UTM parameters
 - [Conversion Tracking](./conversion-tracking.md) - Unified tracking across platforms
 - [AI Agents](./ai-agents.md) - Transparent, controllable optimization
+- [Claude Plugin](./claude-plugin.md) - Run Synter inside Claude Code / Claude Desktop
 
 ## Platform Integration
 
