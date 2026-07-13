@@ -54,6 +54,19 @@ if (userApproved) {
 }
 ```
 
+### MCP `execute` is Dry-Run by Default
+
+The same safety model applies to the MCP `execute` tool (the universal action runner used by Claude, Codex, and other agents connected to Synter). Every `execute` call is a **validation-only dry run unless you explicitly opt in**:
+
+```json
+{ "action": "reddit_ads_create_post", "args": ["--headline", "..."], "dry_run": false }
+```
+
+- `dry_run` defaults to `true`: the action is whitelisted, its arguments are validated, credentials and credit cost are resolved, and **nothing runs**.
+- The dry-run response tells the agent exactly how to proceed: `"next_step": "Re-call execute with dry_run=false to actually run this action."` Agents self-discover the protocol at runtime even if they never read this page.
+- Pass `dry_run: false` only after the dry run validates and, for anything that spends money, only with the account owner's approval.
+- Tip for script-level previews: many scripts accept their own `--dry-run` flag in `args`. When you pass it, the script itself simulates and returns a richer preview than the top-level gate.
+
 ### Auto-Pilot Mode
 
 For trusted agents, run without dry-run:
