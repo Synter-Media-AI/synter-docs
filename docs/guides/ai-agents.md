@@ -1,223 +1,59 @@
 # AI Agents
 
-Unlike enterprise black-box platforms, Synter gives you full programmatic control over AI optimization agents.
+Unlike enterprise black-box platforms, Synter's agents are transparent and controllable, and nothing that spends money runs without approval.
 
 ## Overview
 
-Synter's AI agents are:
-- **Transparent**: See exactly what changes they propose and why
-- **Controllable**: Run in dry-run mode, review changes, then apply
-- **Auditable**: Full history of all agent runs and actions
-- **Configurable**: Set guardrails, limits, and preferences
+Synter's agents are:
+- **Transparent**: you see exactly what they propose and why before anything changes
+- **Controllable**: every action validates as a dry run first, then runs only when you opt in
+- **Auditable**: full history of runs and actions in your workspace
+- **Approval-gated**: writes that spend money ask for explicit approval
 
-## Available Agents
+## How to run agents
 
-| Agent | Description |
-|-------|-------------|
-| `budget-optimizer` | Reallocates budget across campaigns based on performance |
-| `bid-optimizer` | Adjusts bids to hit target CAC/ROAS |
-| `conversion-uploader` | Syncs offline conversions to ad platforms |
-| `audience-expander` | Suggests new audiences based on top performers |
-| `creative-analyzer` | Analyzes ad creative performance patterns |
+There are three ways, all backed by the same tools and the same approval model:
 
-## Running Agents
+1. **In the Synter product** — chat with the agent in your workspace, or set up an Autonomous Operator schedule to monitor and adjust campaigns on a cadence.
+2. **Through the MCP** — connect Claude, Cursor, or Codex to `https://mcp.syntermedia.ai` and drive the agent in natural language. See the [Claude Plugin & MCP guide](./claude-plugin.md). The packaged plugin also ships named subagents: `campaign-strategist`, `media-buyer`, `audience-builder`, `creative-director`, `budget-optimizer`, `performance-analyst`.
+3. **Over the REST API** — run individual tools deterministically with `POST /api/v1/tools/run`. Use this for scheduled optimization or reporting jobs where no human is in the loop. See the [REST API guide](../../sdk/typescript/README.md).
 
-### Dry-Run Mode (Recommended)
+## The approval-before-spend model
 
-Always start with dry-run to preview changes:
+Whether an action arrives through the MCP `execute` tool or the REST endpoint, the same safety model applies: **every action validates first and runs only when you explicitly opt in.**
 
-```typescript
-const optimization = await synter.agents.run('budget-optimizer', {
-  dryRun: true,
-  window: { start: '2025-11-01', end: '2025-11-08' },
-  params: {
-    maxBudgetChange: 0.15,  // ±15%
-    minConversions: 10
-  }
-});
-
-// Review proposed changes
-console.log(optimization.result.proposedChanges);
-// [
-//   { campaignId: 'cmp_123', currentBudget: 500, proposedBudget: 575, reason: 'CAC below target' },
-//   { campaignId: 'cmp_456', currentBudget: 300, proposedBudget: 240, reason: 'CAC above threshold' }
-// ]
-```
-
-### Apply Changes
-
-After reviewing, apply the changes:
-
-```typescript
-if (userApproved) {
-  await synter.agents.apply(optimization.runId);
-}
-```
-
-### MCP `execute` is Dry-Run by Default
-
-The same safety model applies to the MCP `execute` tool (the universal action runner used by Claude, Codex, and other agents connected to Synter). Every `execute` call is a **validation-only dry run unless you explicitly opt in**:
+Through the MCP `execute` tool (the universal action runner used by Claude, Codex, and other connected agents):
 
 ```json
 { "action": "reddit_ads_create_post", "args": ["--headline", "..."], "dry_run": false }
 ```
 
-- `dry_run` defaults to `true`: the action is whitelisted, its arguments are validated, credentials and credit cost are resolved, and **nothing runs**.
-- The dry-run response tells the agent exactly how to proceed: `"next_step": "Re-call execute with dry_run=false to actually run this action."` Agents self-discover the protocol at runtime even if they never read this page.
-- Pass `dry_run: false` only after the dry run validates and, for anything that spends money, only with the account owner's approval.
-- Tip for script-level previews: many scripts accept their own `--dry-run` flag in `args`. When you pass it, the script itself simulates and returns a richer preview than the top-level gate.
+- `dry_run` defaults to `true`: the action is whitelisted, its arguments are validated, credentials and credit cost are resolved, and nothing runs.
+- The dry-run response tells the agent how to proceed: `"next_step": "Re-call execute with dry_run=false to actually run this action."` Agents self-discover the protocol at runtime even if they never read this page.
+- Pass `dry_run: false` only after the dry run validates, and for anything that spends money, only with the account owner's approval.
+- Many scripts also accept their own `--dry-run` flag in `args`. When you pass it, the script simulates and returns a richer preview than the top-level gate.
 
-### Auto-Pilot Mode
+Over the REST API, the equivalent is to pass a tool's own `--dry-run` (or `--validate-only`) flag in `args` first, confirm the preview, then re-run without it.
 
-For trusted agents, run without dry-run:
+## What the agents do
 
-```typescript
-await synter.agents.run('conversion-uploader', {
-  dryRun: false,
-  platforms: ['google', 'reddit']
-});
-```
+| Capability | What it does |
+|------------|--------------|
+| Budget optimization | Reallocates budget from underperformers to top performers, within limits you set |
+| Bid optimization | Adjusts bids toward a target CAC or ROAS |
+| Conversion upload | Syncs offline and delayed conversions back to the ad platforms (see [Conversion Tracking](./conversion-tracking.md)) |
+| Audience building | Builds ABM lists, lookalikes, and signal-based segments |
+| Creative generation | Produces on-brand images, video, and ad copy |
+| Reporting | Cross-channel performance reports and executive summaries |
 
-## Agent Configuration
+## Guardrails
 
-Configure agent behavior globally or per-run:
+Agents operate inside the limits configured on your workspace: budget caps, per-change ceilings, protected campaigns that are never touched, and approval thresholds for large changes. Reads are always free to run. Configure these in the Synter product, or ask the agent to set them for you.
 
-```typescript
-// Update global config
-await synter.agents.updateConfig('budget-optimizer', {
-  maxBudgetChange: 0.20,      // ±20%
-  minConversions: 5,
-  targetCAC: 50,
-  excludeCampaigns: ['cmp_brand']  // Never touch brand campaigns
-});
+## Best practices
 
-// Override per-run
-await synter.agents.run('budget-optimizer', {
-  params: {
-    maxBudgetChange: 0.10  // More conservative for this run
-  }
-});
-```
-
-## Agent History
-
-View past runs and their outcomes:
-
-```typescript
-const runs = await synter.agents.runs('budget-optimizer', {
-  limit: 10,
-  startDate: '2025-11-01'
-});
-
-for (const run of runs) {
-  console.log(`${run.id}: ${run.status} - ${run.changesApplied} changes`);
-}
-```
-
-## Budget Optimizer
-
-The most commonly used agent. Reallocates budget from underperforming campaigns to top performers.
-
-### Parameters
-
-| Parameter | Type | Default | Description |
-|-----------|------|---------|-------------|
-| `maxBudgetChange` | number | 0.15 | Max % change per campaign (0.15 = ±15%) |
-| `minConversions` | number | 10 | Min conversions to consider a campaign |
-| `targetCAC` | number | auto | Target CAC (uses account average if not set) |
-| `targetROAS` | number | auto | Target ROAS (alternative to CAC) |
-| `excludeCampaigns` | string[] | [] | Campaign IDs to never modify |
-| `platforms` | string[] | all | Which platforms to optimize |
-
-### Example
-
-```typescript
-const result = await synter.agents.run('budget-optimizer', {
-  dryRun: true,
-  params: {
-    maxBudgetChange: 0.20,
-    minConversions: 5,
-    targetCAC: 45,
-    excludeCampaigns: ['cmp_brand', 'cmp_retargeting']
-  }
-});
-```
-
-## Bid Optimizer
-
-Adjusts keyword/audience bids to hit target metrics.
-
-### Parameters
-
-| Parameter | Type | Default | Description |
-|-----------|------|---------|-------------|
-| `targetCAC` | number | required | Target cost per acquisition |
-| `maxBidChange` | number | 0.25 | Max % change per bid |
-| `minClicks` | number | 20 | Min clicks to consider |
-| `bidFloor` | number | 0.10 | Minimum bid |
-| `bidCeiling` | number | 50.00 | Maximum bid |
-
-## Conversion Uploader
-
-Syncs offline/delayed conversions to ad platforms.
-
-```typescript
-await synter.agents.run('conversion-uploader', {
-  platforms: ['google', 'reddit'],
-  lookbackDays: 30,  // Upload conversions from last 30 days
-  dryRun: false
-});
-```
-
-## Guardrails & Safety
-
-### Budget Caps
-
-Hard limits that agents will never exceed:
-
-```typescript
-await synter.agents.updateConfig('budget-optimizer', {
-  hardCaps: {
-    maxDailyBudget: 1000,      // Never set daily budget above $1000
-    maxTotalBudget: 10000,     // Never exceed $10k total daily spend
-    minCampaignBudget: 10      // Never drop below $10/day
-  }
-});
-```
-
-### Approval Requirements
-
-Require human approval for large changes:
-
-```typescript
-await synter.agents.updateConfig('budget-optimizer', {
-  requireApprovalIf: {
-    budgetChangePercent: 0.30,  // Changes > 30%
-    budgetChangeAbsolute: 500,  // Changes > $500
-    affectedCampaigns: 5        // Touching > 5 campaigns
-  }
-});
-```
-
-### Notifications
-
-Get notified of agent actions:
-
-```typescript
-await synter.agents.updateConfig('budget-optimizer', {
-  notifications: {
-    onRun: ['slack:#marketing'],
-    onApply: ['email:team@company.com'],
-    onError: ['slack:#alerts', 'email:ops@company.com']
-  }
-});
-```
-
-## Best Practices
-
-1. **Start with dry-run** - Always preview changes before applying
-2. **Set conservative limits** - Start with low `maxBudgetChange` and increase over time
-3. **Exclude critical campaigns** - Protect brand and retargeting campaigns
-4. **Monitor performance** - Review agent history weekly
-5. **Use guardrails** - Set hard caps and approval requirements
-6. **Automate gradually** - Move to auto-pilot only after building trust
+1. Preview first. Let a dry run validate before you approve a real change.
+2. Start conservative. Use small per-change limits and widen them as you build trust.
+3. Protect brand and retargeting campaigns with an exclusion list.
+4. Review run history weekly.
+5. Move to autonomous schedules only after the manual runs look right.

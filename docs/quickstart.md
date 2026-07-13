@@ -1,164 +1,95 @@
 # Quick Start Guide
 
-Get started with Synter in 5 minutes.
+Two ways to build on Synter: the **MCP server** for agent-driven use (recommended), and the **REST API** for deterministic server-to-server automation. Pick the one that fits.
 
 ## Prerequisites
 
-- Node.js 18+ or Python 3.8+
-- A Synter API key ([get one here](https://syntermedia.ai/dashboard))
+- A Synter account. Sign up at [syntermedia.ai](https://syntermedia.ai).
+- Your ad accounts connected (Settings, then Connections).
+- An API key that starts with `syn_`. Create one at [syntermedia.ai/developer](https://syntermedia.ai/developer).
 
-## Installation
+The same `syn_` key works for both the MCP and the REST API.
 
-### TypeScript/Node.js
+## Path 1: The MCP server (recommended)
+
+This is how most people use Synter programmatically. Your AI client (Claude, Cursor, Codex, and others) gets tools to read and manage advertising in natural language.
+
+**Claude Code:**
 
 ```bash
-npm install @synter/sdk
+claude mcp add synter \
+  --transport http \
+  https://mcp.syntermedia.ai \
+  --header "X-Synter-Key: YOUR_API_KEY"
 ```
 
-### Python
+**Cursor / Windsurf / Claude Desktop (HTTP):**
+
+```json
+{
+  "mcpServers": {
+    "synter": {
+      "type": "http",
+      "url": "https://mcp.syntermedia.ai",
+      "headers": { "X-Synter-Key": "YOUR_API_KEY" }
+    }
+  }
+}
+```
+
+Then just ask: "Pull my Google Ads performance for the last 30 days" or "Pause any campaign spending over $100/day with ROAS below 2." Write actions ask for your approval before anything spends money.
+
+Full setup for every client, plus the packaged plugin (skills, agents, safety hook), is in the [Claude Plugin & MCP guide](./guides/claude-plugin.md).
+
+## Path 2: The REST API
+
+Use this for backend jobs, webhooks, and scheduled automation where there is no agent in the loop. One endpoint runs any Synter tool.
+
+- **Base URL:** `https://syntermedia.ai/api/v1`
+- **Auth:** `Authorization: Bearer syn_...` (the REST API does not accept `X-Synter-Key`; that is MCP-only)
+
+### List the tools your key can run
 
 ```bash
-pip install synter
+curl https://syntermedia.ai/api/v1/tools/run \
+  -H "Authorization: Bearer $SYNTER_API_KEY"
 ```
 
-## Get Your API Key
+### Run a tool
 
-1. Sign up at [syntermedia.ai](https://syntermedia.ai)
-2. Go to **Settings** → **API Keys**
-3. Create a new API key
-4. Copy the key (starts with `syn_`)
+`POST /api/v1/tools/run` with a JSON body:
 
-## Your First Campaign
+| Field | Required | Description |
+|-------|----------|-------------|
+| `script_name` | yes | The tool to run (lowercase, underscores). See the list endpoint above. |
+| `args` | no | Array of string CLI-style arguments for the tool. |
+| `platform` | no | Platform hint (`google`, `meta`, `reddit`, ...). |
+| `customer_id` | no | The ad account ID to scope the action to. Must be connected in this key's workspace. |
 
-### TypeScript
-
-```typescript
-import { Synter } from '@synter/sdk';
-
-const synter = new Synter(process.env.SYNTER_API_KEY);
-
-// Create a campaign with auto-generated UTMs
-const campaign = await synter.campaigns.create({
-  name: 'Q4 Product Launch',
-  platform: 'google',
-  budget: { daily: 500, currency: 'USD' },
-  targeting: {
-    keywords: ['saas analytics', 'data platform'],
-    locations: ['US', 'CA'],
-  }
-});
-
-console.log(`Campaign created: ${campaign.id}`);
+```bash
+curl -X POST https://syntermedia.ai/api/v1/tools/run \
+  -H "Authorization: Bearer $SYNTER_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "script_name": "google_ads_upload_offline_conversions",
+    "platform": "google",
+    "customer_id": "1234567890",
+    "args": ["--csv-url", "https://yourapp.com/exports/conversions.csv", "--conversion-name", "Offline Purchase", "--dry-run"]
+  }'
 ```
 
-### Python
+Remove `--dry-run` to actually upload. See the [Conversion Tracking guide](./guides/conversion-tracking.md) for the full offline-conversion workflow.
 
-```python
-import asyncio
-from synter import Synter
+### Scopes, credits, and errors
 
-async def main():
-    async with Synter(api_key="syn_...") as synter:
-        campaign = await synter.campaigns.create({
-            "name": "Q4 Product Launch",
-            "platform": "google",
-            "budget": {"daily": 500, "currency": "USD"},
-            "targeting": {
-                "keywords": ["saas analytics", "data platform"],
-                "locations": ["US", "CA"],
-            }
-        })
-        print(f"Campaign created: {campaign['id']}")
-
-asyncio.run(main())
-```
-
-## Track Conversions
-
-Synter auto-detects the ad platform from click IDs (gclid, rdt_cid, twclid, etc.):
-
-### TypeScript
-
-```typescript
-// Auto-detects platform from URL
-await synter.conversions.create({
-  event: 'purchase',
-  value: 299.99,
-  sendTo: ['google', 'reddit', 'posthog']
-});
-```
-
-### Python
-
-```python
-await synter.conversions.create({
-    "event": "purchase",
-    "value": 299.99,
-    "send_to": ["google", "reddit", "posthog"]
-})
-```
-
-## Get ROAS Metrics
-
-```typescript
-const roas = await synter.analytics.roas({ window: '30d' });
-console.log(roas); // { google: 3.2, reddit: 2.8, linkedin: 4.1 }
-```
-
-## Connect Ad Platforms
-
-Use OAuth to connect your ad accounts:
-
-```typescript
-// Get OAuth URL
-const authUrl = await synter.platforms.getAuthUrl('google', 'https://yourapp.com/callback');
-
-// After user authorizes, complete the flow
-await synter.platforms.completeAuth('google', authorizationCode);
-
-// List connected platforms
-const platforms = await synter.platforms.list();
-```
-
-## Run AI Agents
-
-Use transparent AI agents to optimize your campaigns:
-
-```typescript
-// Run budget optimizer in dry-run mode
-const optimization = await synter.agents.run('budget-optimizer', {
-  dryRun: true,
-  params: {
-    maxBudgetChange: 0.15,  // ±15%
-    minConversions: 10
-  }
-});
-
-// Review proposed changes
-console.log(optimization.result.proposedChanges);
-
-// Apply if approved
-await synter.agents.apply(optimization.runId);
-```
-
-## Sandbox Mode
-
-Test without hitting real ad platforms:
-
-```typescript
-const synter = new Synter({
-  apiKey: 'syn_test_...',  // Test keys auto-enable sandbox
-  environment: 'sandbox'
-});
-
-// All operations use mock data
-const campaign = await synter.campaigns.create({ /* ... */ });
-```
+- Reads (`pull_*` and other read tools) require the `tools:read` scope. Writes require `tools:write`.
+- Write tools deduct credits up front and refund automatically if the tool fails.
+- Common responses: `401` (missing or invalid key), `402` (`INSUFFICIENT_CREDITS`), `403` (missing scope, or `UPGRADE_REQUIRED` on a read-only plan), `400` (`UNKNOWN_TOOL` or a validation error), `502` (backend error, credits refunded).
 
 ## Next Steps
 
-- [TypeScript SDK Reference](../sdk/typescript/README.md)
-- [Python SDK Reference](../sdk/python/README.md)
-- [UTM Management Guide](./guides/utm-management.md)
+- [REST API from Node](../sdk/typescript/README.md)
+- [REST API from Python](../sdk/python/README.md)
 - [Conversion Tracking Guide](./guides/conversion-tracking.md)
 - [AI Agents Guide](./guides/ai-agents.md)
+- [Claude Plugin & MCP](./guides/claude-plugin.md)

@@ -1,295 +1,111 @@
-# synter
+# Synter REST API from Python
 
-**The developer-first SDK for multi-platform ad management.**
+There is no published `synter` PyPI package. Synter's programmatic surface is one authenticated REST endpoint that runs any Synter tool. You call it with `requests` or `httpx`. For agent-driven use in Claude, Cursor, or Codex, use the [MCP server](../../docs/guides/claude-plugin.md) instead.
 
-Ship ads like you ship code. One SDK for Google Ads, Reddit Ads, X/Twitter Ads, and beyond.
+## Setup
 
-## Features
+- **Base URL:** `https://syntermedia.ai/api/v1`
+- **Auth:** `Authorization: Bearer syn_...` (create a key at [syntermedia.ai/developer](https://syntermedia.ai/developer))
 
-✅ **Infrastructure-first**: UTM management, conversion tracking, analytics integration  
-✅ **Multi-platform**: Google, Reddit, LinkedIn, Microsoft, Meta, X  
-✅ **Transparent AI agents**: Run, inspect, and control optimization agents programmatically  
-✅ **Bring your own AI**: Export raw data for custom ML models  
-✅ **Analytics integrations**: PostHog, Heap, Mixpanel, Segment  
-✅ **Type-safe**: Full type hints for Python 3.8+  
-✅ **Async-first**: Built on httpx for high-performance async I/O  
-
-## Installation
-
-```bash
-pip install synter
-```
-
-## Quick Start
+A tiny wrapper is all you need:
 
 ```python
-import asyncio
-from synter import Synter
+import os
+import requests
 
-async def main():
-    async with Synter(api_key="syn_...") as synter:
-        # Create a campaign (UTMs auto-generated)
-        campaign = await synter.campaigns.create({
-            "name": "Q4 Product Launch",
-            "platform": "google",
-            "budget": {"daily": 500, "currency": "USD"},
-            "targeting": {
-                "keywords": ["saas analytics", "data platform"],
-                "locations": ["US", "CA"],
-            }
-        })
+BASE = "https://syntermedia.ai/api/v1"
+HEADERS = {"Authorization": f"Bearer {os.environ['SYNTER_API_KEY']}"}
 
-        # Track conversions (platform auto-detected)
-        await synter.conversions.create({
-            "click_id": request.args.get("gclid"),
-            "event": "purchase",
-            "value": 299.99
-        })
 
-        # Get ROAS
-        roas = await synter.analytics.roas({"window": "30d"})
-        print(roas)  # {"google": 3.2, "reddit": 2.8}
-
-asyncio.run(main())
+def run_tool(script_name, args=None, platform=None, customer_id=None):
+    body = {"script_name": script_name}
+    if args:
+        body["args"] = args
+    if platform:
+        body["platform"] = platform
+    if customer_id:
+        body["customer_id"] = customer_id
+    res = requests.post(f"{BASE}/tools/run", headers=HEADERS, json=body, timeout=120)
+    data = res.json()
+    if not res.ok:
+        raise RuntimeError(f"Synter {res.status_code}: {data}")
+    return data
 ```
 
-## API Reference
-
-### `synter.campaigns`
+## List available tools
 
 ```python
-await synter.campaigns.create(params)      # Create campaign with auto-generated UTMs
-await synter.campaigns.list(params)        # List campaigns
-await synter.campaigns.get(id)             # Get campaign details
-await synter.campaigns.update(id, params)  # Update campaign
-await synter.campaigns.launch(id)          # Launch campaign
-await synter.campaigns.pause(id)           # Pause campaign
+res = requests.get(f"{BASE}/tools/run", headers=HEADERS, timeout=30)
+print(res.json()["tools"])
 ```
 
-### `synter.conversions`
+Requires the `tools:read` scope. The list reflects the tools your key's plan and workspace can run.
+
+## Run a tool
+
+`POST /api/v1/tools/run`:
+
+| Field | Required | Description |
+|-------|----------|-------------|
+| `script_name` | yes | Tool name (lowercase, underscores only). |
+| `args` | no | List of string CLI-style arguments. |
+| `platform` | no | `google`, `meta`, `linkedin`, `reddit`, `microsoft`, `tiktok`, `x`, ... |
+| `customer_id` | no | Ad account ID; must be connected in this key's workspace. |
 
 ```python
-await synter.conversions.create(params)    # Track conversion (auto-detects platform)
-await synter.conversions.list(params)      # List conversions
-```
+# Pull recent performance (read; needs tools:read)
+perf = run_tool(
+    "pull_google_ads_performance",
+    platform="google",
+    customer_id="1234567890",
+    args=["--days", "30"],
+)
 
-### `synter.analytics`
-
-```python
-await synter.analytics.roas(params)        # Get ROAS metrics
-await synter.analytics.cac(params)         # Get CAC metrics
-await synter.analytics.attribution(params) # Get attribution data
-await synter.analytics.query(params)       # Custom analytics query
-await synter.analytics.send_to(platform, event)  # Send event to analytics platform
-```
-
-### `synter.agents`
-
-```python
-await synter.agents.list()                 # List available agents
-await synter.agents.run(agent, params)     # Trigger agent
-await synter.agents.runs(agent, params)    # Get agent history
-await synter.agents.get_run(run_id)        # Get run details
-await synter.agents.apply(run_id)          # Apply dry-run changes
-await synter.agents.update_config(agent, config)  # Update agent config
-```
-
-### `synter.platforms`
-
-```python
-await synter.platforms.list()                           # List connected platforms
-await synter.platforms.get_auth_url(platform, redirect) # Get OAuth URL
-await synter.platforms.complete_auth(platform, code)    # Complete OAuth
-await synter.platforms.disconnect(platform)             # Disconnect platform
-```
-
-### `synter.data`
-
-```python
-await synter.data.export(params)           # Export raw ad data
-async for batch in synter.data.stream(params):  # Stream large datasets
-    process(batch)
-```
-
-## UTM Management
-
-Auto-generated UTM parameters with platform-specific macros:
-
-```python
-await synter.campaigns.create({
-    "name": "Product Launch",
-    "platform": "google",
-    "utm_template": {
-        "source": "google",
-        "medium": "cpc",
-        "campaign": "product-launch",
-        "content": "{{ad_id}}",     # → {creative}
-        "term": "{{keyword}}"       # → {keyword}
-    }
-})
-```
-
-## Conversion Tracking
-
-Unified conversion tracking across all platforms:
-
-```python
-# Auto-detects platform from click ID (gclid, rdt_cid, twclid)
-await synter.conversions.create({
-    "click_id": gclid,
-    "event": "purchase",
-    "value": 299.99,
-    "send_to": ["google", "reddit", "posthog", "mixpanel"]
-})
-```
-
-## AI Agents
-
-Full programmatic control over AI optimization:
-
-```python
-# Run budget optimizer in dry-run mode
-optimization = await synter.agents.run("budget-optimizer", {
-    "dry_run": True,
-    "window": {"start": "2025-11-01", "end": "2025-11-08"},
-    "params": {
-        "max_budget_change": 0.15,  # ±15%
-        "min_conversions": 10
-    }
-})
-
-# Inspect proposed changes
-print(optimization["result"]["proposed_changes"])
-# [
-#   {"campaign_id": "cmp_123", "current_budget": 500, "proposed_budget": 575, "reason": "CAC below target"},
-#   {"campaign_id": "cmp_456", "current_budget": 300, "proposed_budget": 240, "reason": "CAC above threshold"}
-# ]
-
-# Apply if approved
-if user_approved:
-    await synter.agents.apply(optimization["run_id"])
-```
-
-## Bring Your Own AI
-
-Export raw data for custom ML models:
-
-```python
-# Export normalized ad data
-data = await synter.data.export({
-    "platforms": ["google", "reddit", "x"],
-    "window": "30d",
-    "metrics": ["spend", "clicks", "conversions", "revenue"],
-    "dimensions": ["platform", "campaign_id", "date"]
-})
-
-# Feed to your own model
-predictions = your_ml_model.predict(data["data"])
-
-# Or send to GPT-4
-import openai
-analysis = await openai.ChatCompletion.create(
-    model="gpt-4",
-    messages=[{
-        "role": "user",
-        "content": f"Analyze this ad performance:\n{data['data']}"
-    }]
+# Upload offline conversions from a CSV (write; needs tools:write, deducts credits)
+upload = run_tool(
+    "google_ads_upload_offline_conversions",
+    platform="google",
+    customer_id="1234567890",
+    args=[
+        "--csv-url", "https://yourapp.com/exports/conversions.csv",
+        "--conversion-name", "Offline Purchase",
+        # add "--dry-run" first to validate without uploading
+    ],
 )
 ```
 
-## Analytics Integration
+Run the exact tool names from the list endpoint. Passing an unknown `script_name` returns `400 UNKNOWN_TOOL` with zero credits charged.
 
-Send ad events to PostHog, Heap, Mixpanel automatically:
+## Scopes, credits, and errors
 
-```python
-from synter.utils import AnalyticsIntegrationManager
+- **Scopes:** reads need `tools:read`; writes need `tools:write`. A key without the scope gets `403`.
+- **Credits:** write tools deduct credits up front and refund automatically if execution fails.
+- **Status codes:**
+  - `401` missing or invalid API key
+  - `402` `INSUFFICIENT_CREDITS`
+  - `403` missing scope, `UPGRADE_REQUIRED` (read-only plan), `WORKSPACE_SCOPE_REQUIRED`, or `ACCOUNT_ACCESS_DENIED`
+  - `400` `UNKNOWN_TOOL` or a validation error (no charge)
+  - `502` backend error (credits refunded)
 
-manager = AnalyticsIntegrationManager([
-    {"platform": "posthog", "api_key": os.getenv("POSTHOG_KEY"), "enabled": True},
-    {"platform": "mixpanel", "api_key": os.getenv("MIXPANEL_TOKEN"), "enabled": True}
-])
+## Bring your own AI
 
-await manager.track({
-    "event": "purchase",
-    "properties": {"value": 99, "campaign": "launch"}
-})
-```
-
-## Sandbox Mode
-
-Test without hitting real ad platforms:
+Pull normalized data with the `pull_*` tools and feed it to your own model:
 
 ```python
-synter = Synter({
-    "api_key": "syn_test_...",  # Test keys auto-enable sandbox
-    "environment": "sandbox"
-})
-
-campaign = await synter.campaigns.create({...})
-print(campaign["id"])  # "cmp_test_123"
+data = run_tool(
+    "pull_google_ads_performance",
+    platform="google",
+    customer_id="1234567890",
+    args=["--days", "30"],
+)
+# hand `data` to your model, warehouse, or notebook
 ```
 
-## Type Safety
+## See also
 
-Full type hints for Python 3.8+:
-
-```python
-from synter.types import Campaign, CampaignCreateParams, Platform
-
-params: CampaignCreateParams = {
-    "name": "Launch",
-    "platform": "google",
-    "budget": {"daily": 500, "currency": "USD"}
-}
-
-campaign: Campaign = await synter.campaigns.create(params)
-```
-
-## Error Handling
-
-```python
-from synter import SynterError
-
-try:
-    await synter.campaigns.create({...})
-except SynterError as e:
-    print(e.message)  # Human-readable message
-    print(e.status)   # HTTP status code
-    print(e.code)     # Error code (e.g., "invalid_utm")
-```
-
-## Context Manager
-
-Use async context manager for automatic cleanup:
-
-```python
-async with Synter(api_key="syn_...") as synter:
-    campaign = await synter.campaigns.create({...})
-    # HTTP client automatically closed on exit
-```
-
-## Development
-
-```bash
-# Install dev dependencies
-pip install -e ".[dev]"
-
-# Run tests
-pytest
-
-# Type checking
-mypy synter
-
-# Format code
-black synter
-ruff check synter
-```
-
-## Links
-
-- [Documentation](https://syntermedia.ai/docs)
 - [Quick Start](../../docs/quickstart.md)
-- [Guides](../../docs/guides/README.md)
+- [Conversion Tracking](../../docs/guides/conversion-tracking.md)
+- [Claude Plugin & MCP](../../docs/guides/claude-plugin.md)
 
 ## License
 

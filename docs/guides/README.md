@@ -1,34 +1,26 @@
 # Guides
 
-In-depth guides for using Synter effectively.
+In-depth guides for building on Synter.
 
-## Core Concepts
+## Start here
 
-- [UTM Management](./utm-management.md) - Auto-generated UTM parameters
-- [Conversion Tracking](./conversion-tracking.md) - Unified tracking across platforms
-- [AI Agents](./ai-agents.md) - Transparent, controllable optimization
-- [Claude Plugin](./claude-plugin.md) - Run Synter inside Claude Code / Claude Desktop
+- [Quick Start](../quickstart.md) - Connect the MCP and make your first REST call
+- [Claude Plugin & MCP](./claude-plugin.md) - Run Synter inside Claude Code / Claude Desktop / Cursor / Codex
 
-## Platform Integration
+## Build programmatically
 
-- Google Ads — *Coming Soon*
-- Reddit Ads — *Coming Soon*
-- LinkedIn Ads — *Coming Soon*
-- Microsoft Ads — *Coming Soon*
-- Meta Ads — *Coming Soon*
-- X Ads — *Coming Soon*
+- [REST API from Node](../../sdk/typescript/README.md) - Call `/api/v1/tools/run` from TypeScript/Node
+- [REST API from Python](../../sdk/python/README.md) - Call `/api/v1/tools/run` from Python
 
-## Analytics Integration
+## Core concepts
 
-- PostHog — *Coming Soon*
-- Mixpanel — *Coming Soon*
-- Heap — *Coming Soon*
-- Segment — *Coming Soon*
-- Google Analytics 4 — *Coming Soon*
+- [Conversion Tracking](./conversion-tracking.md) - Upload offline and server-side conversions
+- [AI Agents](./ai-agents.md) - How agents run, and the approval-before-spend model
+- [UTM Management](./utm-management.md) - Platform-specific UTM macro reference
 
-## Advanced Topics
+## Coming soon
 
-- Bring Your Own AI — *Coming Soon*
-- Multi-Touch Attribution — *Coming Soon*
-- Webhooks — *Coming Soon*
-- Rate Limits — *Coming Soon*
+- Per-platform tool references (Google, Meta, LinkedIn, Reddit, Microsoft, TikTok, X)
+- Multi-touch attribution
+- Webhooks
+- Rate limits

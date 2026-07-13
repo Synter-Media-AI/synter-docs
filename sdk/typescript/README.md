@@ -1,266 +1,122 @@
-# @synter/sdk
+# Synter REST API from Node/TypeScript
 
-**The developer-first SDK for multi-platform ad management.**
+There is no published `@synter/sdk` npm package. Synter's programmatic surface is one authenticated REST endpoint that runs any Synter tool. You call it with `fetch` (built into Node 18+). For agent-driven use in Claude, Cursor, or Codex, use the [MCP server](../../docs/guides/claude-plugin.md) instead.
 
-Ship ads like you ship code. One SDK for Google Ads, Reddit Ads, X/Twitter Ads, and beyond.
+## Setup
 
-## Features
+- **Base URL:** `https://syntermedia.ai/api/v1`
+- **Auth:** `Authorization: Bearer syn_...` (create a key at [syntermedia.ai/developer](https://syntermedia.ai/developer))
 
-✅ **Infrastructure-first**: UTM management, conversion tracking, analytics integration  
-✅ **Multi-platform**: Google, Reddit, LinkedIn, Microsoft, Meta, X  
-✅ **Transparent AI agents**: Run, inspect, and control optimization agents programmatically  
-✅ **Bring your own AI**: Export raw data for custom ML models  
-✅ **Analytics integrations**: PostHog, Heap, Mixpanel, Segment  
-✅ **TypeScript-native**: Full type safety and IntelliSense  
-
-## Installation
-
-```bash
-npm install @synter/sdk
-```
-
-## Quick Start
+A tiny wrapper is all you need:
 
 ```typescript
-import { Synter } from '@synter/sdk';
+const BASE = "https://syntermedia.ai/api/v1";
 
-const synter = new Synter(process.env.SYNTER_API_KEY);
-
-// Create a campaign (UTMs auto-generated)
-const campaign = await synter.campaigns.create({
-  name: 'Q4 Product Launch',
-  platform: 'google',
-  budget: { daily: 500, currency: 'USD' },
-  targeting: {
-    keywords: ['saas analytics', 'data platform'],
-    locations: ['US', 'CA'],
+async function runTool(params: {
+  script_name: string;
+  args?: string[];
+  platform?: string;
+  customer_id?: string;
+}) {
+  const res = await fetch(`${BASE}/tools/run`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${process.env.SYNTER_API_KEY}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(params),
+  });
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(`Synter ${res.status}: ${JSON.stringify(data)}`);
   }
-});
-
-// Track conversions (platform auto-detected)
-await synter.conversions.create({
-  event: 'purchase',
-  value: 299.99
-});
-
-// Get ROAS
-const roas = await synter.analytics.roas({ window: '30d' });
-console.log(roas); // { google: 3.2, reddit: 2.8 }
-```
-
-## API Reference
-
-### `synter.campaigns`
-
-```typescript
-await synter.campaigns.create(params)   // Create campaign with auto-generated UTMs
-await synter.campaigns.list(params)     // List campaigns
-await synter.campaigns.get(id)          // Get campaign details
-await synter.campaigns.update(id, params) // Update campaign
-await synter.campaigns.launch(id)       // Launch campaign
-await synter.campaigns.pause(id)        // Pause campaign
-```
-
-### `synter.conversions`
-
-```typescript
-await synter.conversions.create(params) // Track conversion (auto-detects platform)
-await synter.conversions.list(params)   // List conversions
-```
-
-### `synter.analytics`
-
-```typescript
-await synter.analytics.roas(params)        // Get ROAS metrics
-await synter.analytics.cac(params)         // Get CAC metrics
-await synter.analytics.attribution(params) // Get attribution data
-await synter.analytics.query(params)       // Custom analytics query
-await synter.analytics.sendTo(platform, event) // Send event to analytics platform
-```
-
-### `synter.agents`
-
-```typescript
-await synter.agents.list()              // List available agents
-await synter.agents.run(agent, params)  // Trigger agent
-await synter.agents.runs(agent, params) // Get agent history
-await synter.agents.getRun(runId)       // Get run details
-await synter.agents.apply(runId)        // Apply dry-run changes
-await synter.agents.updateConfig(agent, config) // Update agent config
-```
-
-### `synter.platforms`
-
-```typescript
-await synter.platforms.list()                     // List connected platforms
-await synter.platforms.getAuthUrl(platform, uri)  // Get OAuth URL
-await synter.platforms.completeAuth(platform, code) // Complete OAuth
-await synter.platforms.disconnect(platform)       // Disconnect platform
-```
-
-### `synter.data`
-
-```typescript
-await synter.data.export(params)  // Export raw ad data
-await synter.data.stream(params)  // Stream large datasets
-```
-
-## UTM Management
-
-Auto-generated UTM parameters with platform-specific macros:
-
-```typescript
-await synter.campaigns.create({
-  name: 'Product Launch',
-  platform: 'google',
-  utmTemplate: {
-    source: 'google',
-    medium: 'cpc',
-    campaign: 'product-launch',
-    content: '{{ad_id}}',     // → {creative}
-    term: '{{keyword}}'       // → {keyword}
-  }
-});
-```
-
-## Conversion Tracking
-
-Unified conversion tracking across all platforms:
-
-```typescript
-// Auto-detects platform from URL (gclid, rdt_cid, twclid)
-await synter.conversions.create({
-  event: 'purchase',
-  value: 299.99,
-  sendTo: ['google', 'reddit', 'posthog', 'mixpanel']
-});
-
-// Or provide click ID manually
-await synter.conversions.create({
-  clickId: req.query.gclid,
-  event: 'signup',
-  sendTo: ['google', 'heap']
-});
-```
-
-## AI Agents
-
-Full programmatic control over AI optimization:
-
-```typescript
-// Run budget optimizer in dry-run mode
-const optimization = await synter.agents.run('budget-optimizer', {
-  dryRun: true,
-  params: {
-    maxBudgetChange: 0.15,  // ±15%
-    minConversions: 10
-  }
-});
-
-// Inspect proposed changes
-console.log(optimization.result.proposedChanges);
-// [
-//   { campaignId: 'cmp_123', currentBudget: 500, proposedBudget: 575, reason: 'CAC below target' },
-//   { campaignId: 'cmp_456', currentBudget: 300, proposedBudget: 240, reason: 'CAC above threshold' }
-// ]
-
-// Apply if approved
-if (userApproved) {
-  await synter.agents.apply(optimization.runId);
+  return data;
 }
 ```
 
-## Bring Your Own AI
-
-Export raw data for custom ML models:
+## List available tools
 
 ```typescript
-const data = await synter.data.export({
-  platforms: ['google', 'reddit', 'x'],
-  window: '30d',
-  metrics: ['spend', 'clicks', 'conversions', 'revenue'],
-  dimensions: ['platform', 'campaign_id', 'date']
+const res = await fetch("https://syntermedia.ai/api/v1/tools/run", {
+  headers: { Authorization: `Bearer ${process.env.SYNTER_API_KEY}` },
+});
+const { tools } = await res.json();
+console.log(tools);
+```
+
+Requires the `tools:read` scope. The list reflects the tools your key's plan and workspace can run.
+
+## Run a tool
+
+`POST /api/v1/tools/run`:
+
+| Field | Required | Description |
+|-------|----------|-------------|
+| `script_name` | yes | Tool name (lowercase, underscores only). |
+| `args` | no | Array of string CLI-style arguments. |
+| `platform` | no | `google`, `meta`, `linkedin`, `reddit`, `microsoft`, `tiktok`, `x`, ... |
+| `customer_id` | no | Ad account ID; must be connected in this key's workspace. |
+
+```typescript
+// Pull recent performance (read; needs tools:read)
+const perf = await runTool({
+  script_name: "pull_google_ads_performance",
+  platform: "google",
+  customer_id: "1234567890",
+  args: ["--days", "30"],
 });
 
-// Feed to your own model
-const predictions = await yourMLModel.predict(data.data);
+// Upload offline conversions from a CSV (write; needs tools:write, deducts credits)
+const upload = await runTool({
+  script_name: "google_ads_upload_offline_conversions",
+  platform: "google",
+  customer_id: "1234567890",
+  args: [
+    "--csv-url", "https://yourapp.com/exports/conversions.csv",
+    "--conversion-name", "Offline Purchase",
+    // include --dry-run first to validate without uploading
+  ],
+});
+```
 
-// Or send to GPT-4
+Run the exact tool names from the list endpoint. Passing an unknown `script_name` returns `400 UNKNOWN_TOOL` with zero credits charged.
+
+## Scopes, credits, and errors
+
+- **Scopes:** reads need `tools:read`; writes need `tools:write`. A key without the scope gets `403`.
+- **Credits:** write tools deduct credits up front and refund automatically if execution fails.
+- **Status codes:**
+  - `401` missing or invalid API key
+  - `402` `INSUFFICIENT_CREDITS`
+  - `403` missing scope, `UPGRADE_REQUIRED` (read-only plan), `WORKSPACE_SCOPE_REQUIRED`, or `ACCOUNT_ACCESS_DENIED`
+  - `400` `UNKNOWN_TOOL` or a validation error (no charge)
+  - `502` backend error (credits refunded)
+
+Errors return JSON like `{ "error": "INSUFFICIENT_CREDITS", "message": "...", "upgradeUrl": "/settings/billing" }`.
+
+## Bring your own AI
+
+Pull normalized data with the `pull_*` tools and feed it to your own model. Synter does not lock the data in:
+
+```typescript
+const data = await runTool({
+  script_name: "pull_google_ads_performance",
+  platform: "google",
+  customer_id: "1234567890",
+  args: ["--days", "30"],
+});
+
 const analysis = await openai.chat.completions.create({
-  model: 'gpt-4',
-  messages: [{
-    role: 'user',
-    content: `Analyze this ad performance:\n${JSON.stringify(data.data)}`
-  }]
+  model: "gpt-4o",
+  messages: [{ role: "user", content: `Analyze this ad performance:\n${JSON.stringify(data)}` }],
 });
 ```
 
-## Analytics Integration
+## See also
 
-Send ad events to PostHog, Heap, Mixpanel automatically:
-
-```typescript
-const synter = new Synter({
-  apiKey: process.env.SYNTER_API_KEY,
-  analytics: {
-    posthog: { apiKey: process.env.POSTHOG_KEY, enabled: true },
-    mixpanel: { token: process.env.MIXPANEL_TOKEN, enabled: true }
-  }
-});
-
-// All conversions automatically flow to analytics platforms
-await synter.conversions.create({ event: 'purchase', value: 99 });
-```
-
-## Sandbox Mode
-
-Test without hitting real ad platforms:
-
-```typescript
-const synter = new Synter({
-  apiKey: 'syn_test_...',  // Test keys auto-enable sandbox
-  environment: 'sandbox'
-});
-
-const campaign = await synter.campaigns.create({ /* ... */ });
-console.log(campaign.id);  // 'cmp_test_123'
-```
-
-## TypeScript Support
-
-Full type safety out of the box:
-
-```typescript
-import type { Campaign, CampaignCreateParams, Platform } from '@synter/sdk';
-
-const params: CampaignCreateParams = {
-  name: 'Launch',
-  platform: 'google' as Platform,
-  budget: { daily: 500, currency: 'USD' }
-};
-```
-
-## Error Handling
-
-```typescript
-import { SynterError } from '@synter/sdk';
-
-try {
-  await synter.campaigns.create({ /* ... */ });
-} catch (error) {
-  if (error instanceof SynterError) {
-    console.error(error.message);  // Human-readable message
-    console.error(error.status);   // HTTP status code
-    console.error(error.code);     // Error code (e.g., 'invalid_utm')
-  }
-}
-```
-
-## Links
-
-- [Documentation](https://syntermedia.ai/docs)
 - [Quick Start](../../docs/quickstart.md)
-- [Guides](../../docs/guides/README.md)
+- [Conversion Tracking](../../docs/guides/conversion-tracking.md)
+- [Claude Plugin & MCP](../../docs/guides/claude-plugin.md)
 
 ## License
 
