@@ -1,89 +1,87 @@
 # UTM Management
 
-Stop manually managing UTM parameters. Synter handles platform-specific macros automatically.
+Stop hand-writing platform-specific UTM macros. The TypeScript SDK ships helper functions that translate one universal template into the right macro syntax per platform.
 
-## The Problem
+> **JavaScript/TypeScript only.** These UTM utilities are exported from `@synterai/sdk-js`. There is no Python equivalent today — if you need them from Python, build the query string yourself or call your Node service.
 
-Each ad platform has its own dynamic parameter syntax:
+## The problem
 
-| Platform | Syntax | Example |
-|----------|--------|---------|
-| Google Ads | `{keyword}` | `{creative}`, `{keyword}`, `{campaignid}` |
-| Reddit | `{{AD_ID}}` | `{{AD_ID}}`, `{{CAMPAIGN_ID}}` |
-| LinkedIn | `{creative}` | `{creative}`, `{campaign_id}` |
-| Microsoft | `{keyword}` | `{AdId}`, `{keyword}` |
+Each ad platform has its own dynamic-parameter syntax for values like ad ID and keyword. Writing them by hand, per platform, is error-prone.
 
-Managing these manually is error-prone and tedious.
+## The solution
 
-## The Solution
-
-Use Synter's universal template syntax and we'll translate to each platform:
+Write one template with `{{double_brace}}` variables and let `buildUTMParameters` translate it for the target platform. The helpers currently support three platforms: **Google**, **Reddit**, and **X**.
 
 ```typescript
-await synter.campaigns.create({
-  name: 'Product Launch',
-  platform: 'google',
-  utmTemplate: {
-    source: 'google',
-    medium: 'cpc',
-    campaign: 'product-launch',
-    content: '{{ad_id}}',     // → {creative}
-    term: '{{keyword}}'       // → {keyword}
-  }
-});
-```
-
-Your landing page URLs automatically get:
-```
-?utm_source=google&utm_medium=cpc&utm_campaign=product-launch
-&utm_content={creative}&utm_term={keyword}
-```
-
-## Universal Template Variables
-
-| Variable | Google | Reddit | LinkedIn | Microsoft |
-|----------|--------|--------|----------|-----------|
-| `{{ad_id}}` | `{creative}` | `{{AD_ID}}` | `{creative}` | `{AdId}` |
-| `{{campaign_id}}` | `{campaignid}` | `{{CAMPAIGN_ID}}` | `{campaign_id}` | `{CampaignId}` |
-| `{{keyword}}` | `{keyword}` | N/A | N/A | `{keyword}` |
-| `{{placement}}` | `{placement}` | `{{SUBREDDIT}}` | N/A | `{placement}` |
-| `{{device}}` | `{device}` | `{{DEVICE}}` | N/A | `{device}` |
-
-## Standalone Usage
-
-You can also use the UTM builder directly:
-
-### TypeScript
-
-```typescript
-import { buildUTMParameters } from '@synter/sdk';
+import { buildUTMParameters, buildTrackingURL } from '@synterai/sdk-js';
 
 const utm = buildUTMParameters(
   {
     source: 'google',
-    campaign: 'launch',
-    content: '{{ad_id}}_{{keyword}}'
+    medium: 'cpc',
+    campaign: 'product-launch',
+    content: '{{ad_id}}',
+    term: '{{keyword}}',
   },
   'google'
 );
-// → { content: '{creative}_{keyword}' }
+// → { source: 'google', medium: 'cpc', campaign: 'product-launch',
+//     content: '{creative}', term: '{keyword}' }
+
+const url = buildTrackingURL('https://example.com/landing', utm);
+// → https://example.com/landing?utm_source=google&utm_medium=cpc
+//   &utm_campaign=product-launch&utm_content={creative}&utm_term={keyword}
 ```
 
-### Python
+`buildUTMParameters` falls back to sensible defaults when a field is omitted: `source` defaults to the platform name, `medium` to `cpc`, and `campaign` to an empty string.
 
-```python
-from synter.utils import build_utm_parameters
+## Universal template variables
 
-utm = build_utm_parameters(
-    {"source": "google", "campaign": "launch", "content": "{{ad_id}}_{{keyword}}"},
-    "google"
-)
-# {"content": "{creative}_{keyword}"}
+Only the mappings below are implemented. Variables not listed for a platform are passed through unchanged.
+
+| Variable | Google | Reddit | X |
+|----------|--------|--------|---|
+| `{{campaign_id}}` | `{campaignid}` | `{{campaign_id}}` | `{campaign_id}` |
+| `{{adgroup_id}}` | `{adgroupid}` | `{{adgroup_id}}` | — |
+| `{{ad_id}}` | `{creative}` | `{{ad_id}}` | — |
+| `{{keyword}}` | `{keyword}` | — | — |
+| `{{match_type}}` | `{matchtype}` | — | — |
+| `{{network}}` | `{network}` | — | — |
+| `{{device}}` | `{device}` | — | — |
+| `{{placement}}` | `{placement}` | — | — |
+| `{{line_item_id}}` | — | — | `{line_item_id}` |
+| `{{creative_id}}` | — | — | `{creative_id}` |
+
+## Other helpers
+
+All exported from `@synterai/sdk-js`:
+
+- `extractUTMParameters(url)` — pull `utm_*` values back out of a URL into a partial `UTMParameters` object.
+- `validateUTMTemplate(template)` — returns `{ valid, errors }`; requires `source`, `medium`, and `campaign`, and rejects values with characters outside `a-zA-Z0-9-_.{}`.
+- `generateDefaultUTMTemplate(platform, campaignName)` — builds a starter template (slugifies the campaign name; adds `{{keyword}}` as the term only for `google`).
+
+```typescript
+import {
+  extractUTMParameters,
+  validateUTMTemplate,
+  generateDefaultUTMTemplate,
+} from '@synterai/sdk-js';
+
+const template = generateDefaultUTMTemplate('google', 'Q4 Product Launch');
+const { valid, errors } = validateUTMTemplate(template);
+const parsed = extractUTMParameters('https://example.com/?utm_source=google&utm_medium=cpc');
 ```
 
 ## Best Practices
 
-1. **Use consistent campaign names** across platforms for easier cross-platform analysis
-2. **Include ad_id and campaign_id** in UTMs for granular attribution
-3. **Use term for keywords** on search platforms (Google, Microsoft)
-4. **Use content for creative variants** to A/B test different ad copy
+1. **Use consistent campaign names** across platforms for easier cross-platform analysis.
+2. **Include `{{ad_id}}` and `{{campaign_id}}`** in your template for granular attribution.
+3. **Use `term` for keywords** on Google search.
+4. **Use `content` for creative variants** to A/B test ad copy.
+5. **Validate before you ship** with `validateUTMTemplate`.
+
+## Reference
+
+- [TypeScript SDK](../../sdk/typescript/README.md)
+- [Conversion Tracking](./conversion-tracking.md)
+- API reference: [syntermedia.ai/docs/api](https://syntermedia.ai/docs/api)

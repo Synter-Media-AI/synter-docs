@@ -1,223 +1,95 @@
-# AI Agents
+# Agentic Control
 
-Unlike enterprise black-box platforms, Synter gives you full programmatic control over AI optimization agents.
+Synter is built for AI agents. There are two real ways to drive it programmatically, and this guide covers both. There is **no** `synter.agents.*` API in any SDK — agentic control happens through the mechanisms below.
 
-## Overview
+## Two ways in
 
-Synter's AI agents are:
-- **Transparent**: See exactly what changes they propose and why
-- **Controllable**: Run in dry-run mode, review changes, then apply
-- **Auditable**: Full history of all agent runs and actions
-- **Configurable**: Set guardrails, limits, and preferences
+1. **The hosted MCP server** — AI agents (Claude, Cursor, Codex, ChatGPT) connect to Synter's Model Context Protocol server and call its tools directly. This is how a conversational agent operates your ad accounts.
+   Setup: [syntermedia.ai/docs/quickstart](https://syntermedia.ai/docs/quickstart)
 
-## Available Agents
+2. **The SDK `execute()` escape hatch** — from your own backend code, `execute(scriptName, args, platform?)` runs any tool in the catalog by name. This is how you script Synter into your own automations.
+   Catalog: [syntermedia.ai/docs/tools](https://syntermedia.ai/docs/tools)
 
-| Agent | Description |
-|-------|-------------|
-| `budget-optimizer` | Reallocates budget across campaigns based on performance |
-| `bid-optimizer` | Adjusts bids to hit target CAC/ROAS |
-| `conversion-uploader` | Syncs offline conversions to ad platforms |
-| `audience-expander` | Suggests new audiences based on top performers |
-| `creative-analyzer` | Analyzes ad creative performance patterns |
+Both talk to the same production endpoint (`POST https://syntermedia.ai/api/v1/tools/run`), so a call behaves identically whether an MCP agent or your code makes it.
 
-## Running Agents
+> **⚠️ Server-side only.** Your `SYNTER_API_KEY` can spend money and modify ad accounts. Keep it on a backend, never in client-side code.
 
-### Dry-Run Mode (Recommended)
+## The `execute()` escape hatch
 
-Always start with dry-run to preview changes:
+The typed SDK methods (`campaigns.*`, `analytics.*`, `conversions.*`, `keywords.*`, `creative.*`, `audiences.*`, ...) cover the ~25 most common tools. `execute()` reaches any of the 140+ backend scripts beyond them.
+
+### TypeScript
 
 ```typescript
-const optimization = await synter.agents.run('budget-optimizer', {
-  dryRun: true,
-  window: { start: '2025-11-01', end: '2025-11-08' },
-  params: {
-    maxBudgetChange: 0.15,  // ±15%
-    minConversions: 10
-  }
-});
+import { Synter } from '@synterai/sdk-js';
 
-// Review proposed changes
-console.log(optimization.result.proposedChanges);
-// [
-//   { campaignId: 'cmp_123', currentBudget: 500, proposedBudget: 575, reason: 'CAC below target' },
-//   { campaignId: 'cmp_456', currentBudget: 300, proposedBudget: 240, reason: 'CAC above threshold' }
-// ]
+const synter = new Synter(process.env.SYNTER_API_KEY!);
+
+// args is an idiomatic { flagName: value } map, converted to CLI flags internally
+await synter.execute('google_ads_list_audiences', { status: 'ENABLED' }, 'google');
 ```
 
-### Apply Changes
+### Python
 
-After reviewing, apply the changes:
+```python
+from synter import Synter
+
+client = Synter(api_key="syn_...")
+
+client.execute("google_ads_list_audiences", {"status": "ENABLED"}, "google")
+```
+
+### Rust
+
+```rust
+use std::collections::HashMap;
+use serde_json::json;
+
+let mut args = HashMap::new();
+args.insert("status".to_string(), json!("ENABLED"));
+client.execute("google_ads_list_audiences", args, Some("google")).await?;
+```
+
+## Optimization is composed from real tools
+
+Budget and bid changes are not run by a magic optimizer object — you compose them from the tools that actually exist. Read performance, decide, then act:
 
 ```typescript
-if (userApproved) {
-  await synter.agents.apply(optimization.runId);
-}
+// 1. Read performance
+const perf = await synter.analytics.getPerformance({ date_range: 'LAST_30_DAYS' });
+
+// 2. Act on it with typed methods...
+await synter.campaigns.updateBudget({ campaign_id: '123', platform: 'google', daily_budget: 75 });
+await synter.campaigns.pause({ campaign_id: '456', platform: 'google' });
+
+// ...or reach any other backend script via execute()
+await synter.execute('<some_optimization_script>', { /* flag: value */ }, 'google');
 ```
 
-### MCP `execute` is Dry-Run by Default
+Keep your own guardrails (max budget change, excluded campaigns, approval thresholds) in your application logic around these calls.
 
-The same safety model applies to the MCP `execute` tool (the universal action runner used by Claude, Codex, and other agents connected to Synter). Every `execute` call is a **validation-only dry run unless you explicitly opt in**:
+## The MCP dry-run safety model
+
+When an AI agent drives Synter through the MCP server's action runner, every action is a **validation-only dry run unless the agent explicitly opts in**:
 
 ```json
 { "action": "reddit_ads_create_post", "args": ["--headline", "..."], "dry_run": false }
 ```
 
-- `dry_run` defaults to `true`: the action is whitelisted, its arguments are validated, credentials and credit cost are resolved, and **nothing runs**.
-- The dry-run response tells the agent exactly how to proceed: `"next_step": "Re-call execute with dry_run=false to actually run this action."` Agents self-discover the protocol at runtime even if they never read this page.
+- `dry_run` defaults to `true`: the action is whitelisted, its arguments are validated, and credentials and credit cost are resolved — but **nothing runs**.
+- The dry-run response tells the agent how to proceed (`"next_step": "Re-call with dry_run=false to actually run this action."`), so agents self-discover the protocol at runtime.
 - Pass `dry_run: false` only after the dry run validates and, for anything that spends money, only with the account owner's approval.
-- Tip for script-level previews: many scripts accept their own `--dry-run` flag in `args`. When you pass it, the script itself simulates and returns a richer preview than the top-level gate.
-
-### Auto-Pilot Mode
-
-For trusted agents, run without dry-run:
-
-```typescript
-await synter.agents.run('conversion-uploader', {
-  dryRun: false,
-  platforms: ['google', 'reddit']
-});
-```
-
-## Agent Configuration
-
-Configure agent behavior globally or per-run:
-
-```typescript
-// Update global config
-await synter.agents.updateConfig('budget-optimizer', {
-  maxBudgetChange: 0.20,      // ±20%
-  minConversions: 5,
-  targetCAC: 50,
-  excludeCampaigns: ['cmp_brand']  // Never touch brand campaigns
-});
-
-// Override per-run
-await synter.agents.run('budget-optimizer', {
-  params: {
-    maxBudgetChange: 0.10  // More conservative for this run
-  }
-});
-```
-
-## Agent History
-
-View past runs and their outcomes:
-
-```typescript
-const runs = await synter.agents.runs('budget-optimizer', {
-  limit: 10,
-  startDate: '2025-11-01'
-});
-
-for (const run of runs) {
-  console.log(`${run.id}: ${run.status} - ${run.changesApplied} changes`);
-}
-```
-
-## Budget Optimizer
-
-The most commonly used agent. Reallocates budget from underperforming campaigns to top performers.
-
-### Parameters
-
-| Parameter | Type | Default | Description |
-|-----------|------|---------|-------------|
-| `maxBudgetChange` | number | 0.15 | Max % change per campaign (0.15 = ±15%) |
-| `minConversions` | number | 10 | Min conversions to consider a campaign |
-| `targetCAC` | number | auto | Target CAC (uses account average if not set) |
-| `targetROAS` | number | auto | Target ROAS (alternative to CAC) |
-| `excludeCampaigns` | string[] | [] | Campaign IDs to never modify |
-| `platforms` | string[] | all | Which platforms to optimize |
-
-### Example
-
-```typescript
-const result = await synter.agents.run('budget-optimizer', {
-  dryRun: true,
-  params: {
-    maxBudgetChange: 0.20,
-    minConversions: 5,
-    targetCAC: 45,
-    excludeCampaigns: ['cmp_brand', 'cmp_retargeting']
-  }
-});
-```
-
-## Bid Optimizer
-
-Adjusts keyword/audience bids to hit target metrics.
-
-### Parameters
-
-| Parameter | Type | Default | Description |
-|-----------|------|---------|-------------|
-| `targetCAC` | number | required | Target cost per acquisition |
-| `maxBidChange` | number | 0.25 | Max % change per bid |
-| `minClicks` | number | 20 | Min clicks to consider |
-| `bidFloor` | number | 0.10 | Minimum bid |
-| `bidCeiling` | number | 50.00 | Maximum bid |
-
-## Conversion Uploader
-
-Syncs offline/delayed conversions to ad platforms.
-
-```typescript
-await synter.agents.run('conversion-uploader', {
-  platforms: ['google', 'reddit'],
-  lookbackDays: 30,  // Upload conversions from last 30 days
-  dryRun: false
-});
-```
-
-## Guardrails & Safety
-
-### Budget Caps
-
-Hard limits that agents will never exceed:
-
-```typescript
-await synter.agents.updateConfig('budget-optimizer', {
-  hardCaps: {
-    maxDailyBudget: 1000,      // Never set daily budget above $1000
-    maxTotalBudget: 10000,     // Never exceed $10k total daily spend
-    minCampaignBudget: 10      // Never drop below $10/day
-  }
-});
-```
-
-### Approval Requirements
-
-Require human approval for large changes:
-
-```typescript
-await synter.agents.updateConfig('budget-optimizer', {
-  requireApprovalIf: {
-    budgetChangePercent: 0.30,  // Changes > 30%
-    budgetChangeAbsolute: 500,  // Changes > $500
-    affectedCampaigns: 5        // Touching > 5 campaigns
-  }
-});
-```
-
-### Notifications
-
-Get notified of agent actions:
-
-```typescript
-await synter.agents.updateConfig('budget-optimizer', {
-  notifications: {
-    onRun: ['slack:#marketing'],
-    onApply: ['email:team@company.com'],
-    onError: ['slack:#alerts', 'email:ops@company.com']
-  }
-});
-```
+- Many scripts also accept their own `--dry-run` flag in `args` for a richer script-level preview.
 
 ## Best Practices
 
-1. **Start with dry-run** - Always preview changes before applying
-2. **Set conservative limits** - Start with low `maxBudgetChange` and increase over time
-3. **Exclude critical campaigns** - Protect brand and retargeting campaigns
-4. **Monitor performance** - Review agent history weekly
-5. **Use guardrails** - Set hard caps and approval requirements
-6. **Automate gradually** - Move to auto-pilot only after building trust
+1. **Preview before you spend** — rely on the MCP dry-run default, or a script's own `--dry-run` flag.
+2. **Read before you write** — pull `analytics.getPerformance` before changing budgets or bids.
+3. **Keep guardrails in your code** — caps, exclusions, and approval thresholds live in your automation, not in a hidden agent.
+4. **Protect critical campaigns** — never auto-touch brand or retargeting campaigns.
+
+## Reference
+
+- MCP setup: [syntermedia.ai/docs/quickstart](https://syntermedia.ai/docs/quickstart)
+- Tool catalog: [syntermedia.ai/docs/tools](https://syntermedia.ai/docs/tools)
+- [TypeScript SDK](../../sdk/typescript/README.md) · [Python SDK](../../sdk/python/README.md) · [Rust SDK](../../sdk/rust/README.md)
