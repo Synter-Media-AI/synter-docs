@@ -5,14 +5,14 @@ Get started with Synter in 5 minutes.
 ## Prerequisites
 
 - Node.js 18+ or Python 3.8+
-- A Synter API key ([get one here](https://syntermedia.ai/dashboard))
+- A Synter API key ([get one from the Developer Portal](https://syntermedia.ai/developer))
 
 ## Installation
 
 ### TypeScript/Node.js
 
 ```bash
-npm install @synter/sdk
+npm install @synterai/sdk-js
 ```
 
 ### Python
@@ -21,139 +21,131 @@ npm install @synter/sdk
 pip install synter
 ```
 
+### CLI
+
+```bash
+npm install -g synter
+synter login   # opens a browser device-code flow — no copy-paste needed
+```
+
 ## Get Your API Key
 
 1. Sign up at [syntermedia.ai](https://syntermedia.ai)
-2. Go to **Settings** → **API Keys**
+2. Open the [Developer Portal](https://syntermedia.ai/developer)
 3. Create a new API key
 4. Copy the key (starts with `syn_`)
+
+**No account yet?** If you're connecting from an MCP client (Claude, Cursor, etc.), you can onboard without leaving the conversation: call `synter_onboarding_start(email="you@work-email.com")`, click the magic link in your inbox, then check `synter_onboarding_status(session_token)` until your key is ready.
 
 ## Your First Campaign
 
 ### TypeScript
 
 ```typescript
-import { Synter } from '@synter/sdk';
+import { Synter } from '@synterai/sdk-js';
 
 const synter = new Synter(process.env.SYNTER_API_KEY);
 
-// Create a campaign with auto-generated UTMs
-const campaign = await synter.campaigns.create({
-  name: 'Q4 Product Launch',
-  platform: 'google',
-  budget: { daily: 500, currency: 'USD' },
-  targeting: {
-    keywords: ['saas analytics', 'data platform'],
-    locations: ['US', 'CA'],
-  }
+// Create a Google Ads search campaign
+const campaign = await synter.campaigns.createSearch({
+  campaign_name: 'Q4 Product Launch',
+  daily_budget: 500,
+  keywords: ['saas analytics', 'data platform'],
+  headlines: ['Ship Ads Like Code', 'One API for Every Platform', 'Launch in Minutes'],
+  descriptions: ['Cross-platform ad management for developers.', 'Automate campaigns across 20+ platforms.'],
+  final_url: 'https://yourapp.com',
+  geo_targets: ['US', 'CA']
 });
-
-console.log(`Campaign created: ${campaign.id}`);
 ```
 
 ### Python
 
 ```python
-import asyncio
 from synter import Synter
 
-async def main():
-    async with Synter(api_key="syn_...") as synter:
-        campaign = await synter.campaigns.create({
-            "name": "Q4 Product Launch",
-            "platform": "google",
-            "budget": {"daily": 500, "currency": "USD"},
-            "targeting": {
-                "keywords": ["saas analytics", "data platform"],
-                "locations": ["US", "CA"],
-            }
-        })
-        print(f"Campaign created: {campaign['id']}")
+client = Synter(api_key="syn_...")
 
-asyncio.run(main())
+campaign = client.campaigns.create_search(
+    campaign_name="Q4 Product Launch",
+    daily_budget=500,
+    keywords=["saas analytics", "data platform"],
+    headlines=["Ship Ads Like Code", "One API for Every Platform", "Launch in Minutes"],
+    descriptions=["Cross-platform ad management for developers.", "Automate campaigns across 20+ platforms."],
+    final_url="https://yourapp.com",
+    geo_targets=["US", "CA"],
+)
 ```
 
-## Track Conversions
-
-Synter auto-detects the ad platform from click IDs (gclid, rdt_cid, twclid, etc.):
-
-### TypeScript
-
-```typescript
-// Auto-detects platform from URL
-await synter.conversions.create({
-  event: 'purchase',
-  value: 299.99,
-  sendTo: ['google', 'reddit', 'posthog']
-});
-```
-
-### Python
+Prefer async? Use `AsyncSynter`:
 
 ```python
+from synter import AsyncSynter
+
+async with AsyncSynter(api_key="syn_...") as client:
+    campaigns = await client.campaigns.list(platform="google")
+```
+
+## Pull Performance
+
+```typescript
+const performance = await synter.analytics.getPerformance({
+  platform: 'google',
+  date_range: 'LAST_7_DAYS'
+});
+
+const spend = await synter.analytics.getDailySpend({ days: 7 });
+```
+
+## Set Up Conversion Tracking
+
+Define a conversion action, then verify your site's tracking:
+
+```typescript
+// Create a conversion action
 await synter.conversions.create({
-    "event": "purchase",
-    "value": 299.99,
-    "send_to": ["google", "reddit", "posthog"]
-})
+  name: 'Purchase',
+  value: 299.99,
+  category: 'PURCHASE'
+});
+
+// Diagnose tracking on your site
+await synter.conversions.diagnoseTracking({ url: 'https://yourapp.com' });
 ```
 
-## Get ROAS Metrics
+## Manage Campaigns
 
 ```typescript
-const roas = await synter.analytics.roas({ window: '30d' });
-console.log(roas); // { google: 3.2, reddit: 2.8, linkedin: 4.1 }
+// List campaigns
+const campaigns = await synter.campaigns.list({ platform: 'google', status: 'ENABLED' });
+
+// Pause a campaign
+await synter.campaigns.pause({ campaign_id: '123456', platform: 'google' });
+
+// Update budget
+await synter.campaigns.updateBudget({
+  campaign_id: '123456',
+  platform: 'google',
+  daily_budget: 750
+});
 ```
 
-## Connect Ad Platforms
+## Connect Your AI Agent (MCP)
 
-Use OAuth to connect your ad accounts:
+Point any MCP client at the hosted server:
 
-```typescript
-// Get OAuth URL
-const authUrl = await synter.platforms.getAuthUrl('google', 'https://yourapp.com/callback');
-
-// After user authorizes, complete the flow
-await synter.platforms.completeAuth('google', authorizationCode);
-
-// List connected platforms
-const platforms = await synter.platforms.list();
-```
-
-## Run AI Agents
-
-Use transparent AI agents to optimize your campaigns:
-
-```typescript
-// Run budget optimizer in dry-run mode
-const optimization = await synter.agents.run('budget-optimizer', {
-  dryRun: true,
-  params: {
-    maxBudgetChange: 0.15,  // ±15%
-    minConversions: 10
+```json
+{
+  "mcpServers": {
+    "synter": {
+      "type": "http",
+      "url": "https://mcp.syntermedia.ai",
+      "headers": { "X-Synter-Key": "YOUR_API_KEY" }
+    }
   }
-});
-
-// Review proposed changes
-console.log(optimization.result.proposedChanges);
-
-// Apply if approved
-await synter.agents.apply(optimization.runId);
+}
 ```
 
-## Sandbox Mode
-
-Test without hitting real ad platforms:
-
-```typescript
-const synter = new Synter({
-  apiKey: 'syn_test_...',  // Test keys auto-enable sandbox
-  environment: 'sandbox'
-});
-
-// All operations use mock data
-const campaign = await synter.campaigns.create({ /* ... */ });
-```
+Google Analytics 4 tools are free and cost no credits — a good first call to verify your setup.
 
 ## Next Steps
 
@@ -162,3 +154,4 @@ const campaign = await synter.campaigns.create({ /* ... */ });
 - [UTM Management Guide](./guides/utm-management.md)
 - [Conversion Tracking Guide](./guides/conversion-tracking.md)
 - [AI Agents Guide](./guides/ai-agents.md)
+- [Full docs at docs.syntermedia.ai](https://docs.syntermedia.ai)

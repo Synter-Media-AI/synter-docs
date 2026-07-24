@@ -12,11 +12,14 @@ In-depth guides for using Synter effectively.
 ## Platform Integration
 
 - Google Ads — *Coming Soon*
-- Reddit Ads — *Coming Soon*
+- Meta Ads — *Coming Soon*
 - LinkedIn Ads — *Coming Soon*
 - Microsoft Ads — *Coming Soon*
-- Meta Ads — *Coming Soon*
+- Reddit Ads — *Coming Soon*
+- TikTok Ads — *Coming Soon*
 - X Ads — *Coming Soon*
+
+Platform-by-platform integration docs are live today at [docs.syntermedia.ai/integrations](https://docs.syntermedia.ai/integrations).
 
 ## Analytics Integration
 

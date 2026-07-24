@@ -1,89 +1,63 @@
 # UTM Management
 
-Stop manually managing UTM parameters. Synter handles platform-specific macros automatically.
+Stop manually managing UTM parameters. Synter's SDK utilities translate a universal template syntax into each platform's dynamic macros.
 
 ## The Problem
 
-Each ad platform has its own dynamic parameter syntax:
-
-| Platform | Syntax | Example |
-|----------|--------|---------|
-| Google Ads | `{keyword}` | `{creative}`, `{keyword}`, `{campaignid}` |
-| Reddit | `{{AD_ID}}` | `{{AD_ID}}`, `{{CAMPAIGN_ID}}` |
-| LinkedIn | `{creative}` | `{creative}`, `{campaign_id}` |
-| Microsoft | `{keyword}` | `{AdId}`, `{keyword}` |
-
-Managing these manually is error-prone and tedious.
+Each ad platform has its own dynamic parameter syntax — Google uses `{keyword}` and `{creative}`, X uses `{campaign_id}`, Reddit uses `{{ad_id}}`. Managing these manually is error-prone and tedious.
 
 ## The Solution
 
-Use Synter's universal template syntax and we'll translate to each platform:
+Write one universal template and let the SDK translate it per platform:
 
 ```typescript
-await synter.campaigns.create({
-  name: 'Product Launch',
-  platform: 'google',
-  utmTemplate: {
+import { buildUTMParameters, buildTrackingURL } from '@synterai/sdk-js';
+
+const utm = buildUTMParameters(
+  {
     source: 'google',
     medium: 'cpc',
     campaign: 'product-launch',
     content: '{{ad_id}}',     // → {creative}
     term: '{{keyword}}'       // → {keyword}
-  }
-});
-```
+  },
+  'google'
+);
 
-Your landing page URLs automatically get:
-```
-?utm_source=google&utm_medium=cpc&utm_campaign=product-launch
-&utm_content={creative}&utm_term={keyword}
+const url = buildTrackingURL('https://yourapp.com/landing', utm);
+// https://yourapp.com/landing?utm_source=google&utm_medium=cpc
+//   &utm_campaign=product-launch&utm_content={creative}&utm_term={keyword}
 ```
 
 ## Universal Template Variables
 
-| Variable | Google | Reddit | LinkedIn | Microsoft |
-|----------|--------|--------|----------|-----------|
-| `{{ad_id}}` | `{creative}` | `{{AD_ID}}` | `{creative}` | `{AdId}` |
-| `{{campaign_id}}` | `{campaignid}` | `{{CAMPAIGN_ID}}` | `{campaign_id}` | `{CampaignId}` |
-| `{{keyword}}` | `{keyword}` | N/A | N/A | `{keyword}` |
-| `{{placement}}` | `{placement}` | `{{SUBREDDIT}}` | N/A | `{placement}` |
-| `{{device}}` | `{device}` | `{{DEVICE}}` | N/A | `{device}` |
+| Variable | Google | Reddit | X |
+|----------|--------|--------|---|
+| `{{campaign_id}}` | `{campaignid}` | `{{campaign_id}}` | `{campaign_id}` |
+| `{{adgroup_id}}` | `{adgroupid}` | `{{adgroup_id}}` | — |
+| `{{ad_id}}` | `{creative}` | `{{ad_id}}` | — |
+| `{{keyword}}` | `{keyword}` | — | — |
+| `{{device}}` | `{device}` | — | — |
+| `{{placement}}` | `{placement}` | — | — |
+| `{{creative_id}}` | — | — | `{creative_id}` |
 
-## Standalone Usage
+Unset `source`/`medium` fall back to sensible defaults (`source` = the platform, `medium` = `cpc`).
 
-You can also use the UTM builder directly:
-
-### TypeScript
+## More Utilities
 
 ```typescript
-import { buildUTMParameters } from '@synter/sdk';
-
-const utm = buildUTMParameters(
-  {
-    source: 'google',
-    campaign: 'launch',
-    content: '{{ad_id}}_{{keyword}}'
-  },
-  'google'
-);
-// → { content: '{creative}_{keyword}' }
+import {
+  extractUTMParameters,     // Parse UTM params out of a URL
+  validateUTMTemplate,      // Validate a template before use
+  generateDefaultUTMTemplate // Sensible defaults for a platform + campaign
+} from '@synterai/sdk-js';
 ```
 
-### Python
-
-```python
-from synter.utils import build_utm_parameters
-
-utm = build_utm_parameters(
-    {"source": "google", "campaign": "launch", "content": "{{ad_id}}_{{keyword}}"},
-    "google"
-)
-# {"content": "{creative}_{keyword}"}
-```
+All UTM utilities run client-side — no network calls, no credits.
 
 ## Best Practices
 
 1. **Use consistent campaign names** across platforms for easier cross-platform analysis
 2. **Include ad_id and campaign_id** in UTMs for granular attribution
-3. **Use term for keywords** on search platforms (Google, Microsoft)
+3. **Use term for keywords** on search platforms
 4. **Use content for creative variants** to A/B test different ad copy

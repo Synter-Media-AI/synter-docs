@@ -1,22 +1,56 @@
 # Conversion Tracking
 
-Unified conversion tracking across all ad platforms with automatic click ID detection.
+Set up conversion tracking across your ad platforms, with client-side utilities for click ID detection.
 
 ## Overview
 
-Synter provides a single API to track conversions across all your ad platforms. We automatically detect which platform the click came from and send the conversion to the right place.
+Conversion tracking in Synter has two parts:
 
-## How It Works
+1. **Conversion actions** — defined once per event type (signup, purchase, ...) via the API, so ad platforms know what to optimize toward.
+2. **Click ID capture** — client-side utilities that detect which platform a visitor came from, so conversions attribute correctly.
 
-1. User clicks an ad → arrives at your site with a click ID in the URL
-2. You call `synter.conversions.create()` with the event details
-3. Synter auto-detects the platform from the click ID
-4. Conversion is sent to the ad platform's API
-5. Optionally, event is also sent to your analytics platforms
+## Define Conversion Actions
+
+### TypeScript
+
+```typescript
+import { Synter } from '@synterai/sdk-js';
+
+const synter = new Synter(process.env.SYNTER_API_KEY);
+
+await synter.conversions.create({
+  name: 'Purchase',
+  value: 299.99,          // Default conversion value in USD (optional)
+  category: 'PURCHASE'    // PURCHASE | SIGNUP | LEAD | PAGE_VIEW | ADD_TO_CART | DOWNLOAD | OTHER
+});
+
+// List existing conversion actions
+const actions = await synter.conversions.list();
+```
+
+### Python
+
+```python
+from synter import Synter
+
+client = Synter(api_key="syn_...")
+
+client.conversions.create(name="Purchase", value=299.99, category="PURCHASE")
+```
+
+## Diagnose Tracking on Your Site
+
+Check that pixels and tags are firing correctly:
+
+```typescript
+const report = await synter.conversions.diagnoseTracking({
+  url: 'https://yourapp.com'
+});
+```
 
 ## Click ID Detection
 
-Each platform uses a different URL parameter:
+Each platform appends a different URL parameter when a user clicks an ad:
 
 | Platform | Parameter | Example |
 |----------|-----------|---------|
@@ -27,137 +61,41 @@ Each platform uses a different URL parameter:
 | Meta | `fbclid` | `?fbclid=fb123` |
 | X/Twitter | `twclid` | `?twclid=tw789` |
 
-## Basic Usage
-
-### TypeScript
+The SDK ships client-side utilities (no network calls) to capture these:
 
 ```typescript
-// Auto-detects platform from URL
-await synter.conversions.create({
-  event: 'purchase',
-  value: 299.99,
-  currency: 'USD'
-});
+import { detectClickId, extractTrackingParams, validateClickId } from '@synterai/sdk-js';
 
-// Or provide click ID manually
-await synter.conversions.create({
-  clickId: req.query.gclid,
-  event: 'signup',
-  value: 0
-});
-```
-
-### Python
-
-```python
-# Auto-detects platform from click ID
-await synter.conversions.create({
-    "click_id": request.args.get("gclid"),
-    "event": "purchase",
-    "value": 299.99,
-    "currency": "USD"
-})
-```
-
-## Fan Out to Multiple Destinations
-
-Send conversions to ad platforms AND analytics tools simultaneously:
-
-```typescript
-await synter.conversions.create({
-  event: 'purchase',
-  value: 299.99,
-  sendTo: ['google', 'reddit', 'posthog', 'mixpanel']
-});
-```
-
-## Conversion Events
-
-Standard events we support:
-
-| Event | Description | Typical Value |
-|-------|-------------|---------------|
-| `page_view` | Page viewed | 0 |
-| `signup` | User signed up | 0 |
-| `lead` | Lead captured | 0-50 |
-| `add_to_cart` | Item added to cart | Item price |
-| `begin_checkout` | Checkout started | Cart value |
-| `purchase` | Purchase completed | Order value |
-| `subscription` | Subscription started | MRR |
-
-## Custom Events
-
-You can also track custom events:
-
-```typescript
-await synter.conversions.create({
-  event: 'demo_scheduled',
-  value: 500,  // Estimated lead value
-  properties: {
-    plan: 'enterprise',
-    source: 'pricing_page'
-  }
-});
-```
-
-## Server-Side Tracking
-
-For server-side conversion tracking, store the click ID on your backend:
-
-```typescript
-// On page load, store click ID in session
-app.get('/', (req, res) => {
-  if (req.query.gclid) {
-    req.session.clickId = req.query.gclid;
-    req.session.clickPlatform = 'google';
-  }
-});
-
-// On conversion, use stored click ID
-app.post('/checkout', async (req, res) => {
-  await synter.conversions.create({
-    clickId: req.session.clickId,
-    event: 'purchase',
-    value: req.body.orderTotal
-  });
-});
-```
-
-## Offline Conversions
-
-For conversions that happen offline (phone calls, in-person sales):
-
-```typescript
-await synter.conversions.create({
-  clickId: storedClickId,
-  event: 'offline_purchase',
-  value: 5000,
-  conversionTime: new Date('2025-01-15T14:30:00Z')  // When conversion actually happened
-});
-```
-
-## Debugging
-
-Use the tracking utilities to debug click detection:
-
-```typescript
-import { detectClickId, extractTrackingParams } from '@synter/sdk';
-
-// Detect click ID from URL
+// Detect click ID from the current URL
 const { platform, clickId } = detectClickId(window.location.href);
 console.log(platform); // 'google'
 console.log(clickId);  // 'CjwKCAjw...'
 
-// Extract all tracking params
+// Extract all tracking params (click IDs + UTMs)
 const tracking = extractTrackingParams(window.location.href, document.referrer);
-console.log(tracking.clickIds);  // { google: 'abc123', reddit: 't3_xyz' }
-console.log(tracking.utm);        // { source: 'google', medium: 'cpc', ... }
+console.log(tracking.clickIds); // { google: 'abc123' }
+console.log(tracking.utm);      // { source: 'google', medium: 'cpc', ... }
+```
+
+## Store Click IDs Server-Side
+
+For accurate attribution, persist the click ID when the visitor lands and associate it with the eventual conversion:
+
+```typescript
+// On page load, store click ID in session
+app.get('/', (req, res) => {
+  const { platform, clickId } = detectClickId(req.originalUrl);
+  if (clickId) {
+    req.session.clickId = clickId;
+    req.session.clickPlatform = platform;
+  }
+});
 ```
 
 ## Best Practices
 
-1. **Store click IDs server-side** for accurate attribution
-2. **Use consistent event names** across your codebase
-3. **Include transaction IDs** to dedupe conversions
-4. **Send conversions as soon as possible** after they occur
-5. **Test with sandbox mode** before going live
+1. **Define conversion actions first** — platforms need them before they can attribute or optimize
+2. **Store click IDs server-side** for accurate attribution across sessions
+3. **Use consistent event names** across your codebase
+4. **Run `diagnoseTracking`** after any landing page change
+5. **Google Analytics 4 reads are free** — use the GA4 tools (no credits) to cross-check conversion counts
