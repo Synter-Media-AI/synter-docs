@@ -11,7 +11,7 @@ Ship ads like you ship code. One SDK for Google Ads, Reddit Ads, LinkedIn Ads, M
 - [Python SDK](./sdk/python/README.md) - `synter` API reference for Python (live on PyPI)
 - [Rust SDK](./sdk/rust/README.md) - `synter` crate reference (live on crates.io)
 - [Go SDK](./sdk/go/README.md) - coming soon
-- [Java SDK](./sdk/java/README.md) - coming soon
+- [Java SDK](./sdk/java/README.md) - `ai.syntermedia:synter-sdk` reference (live on Maven Central)
 - [Guides](./docs/guides/README.md) - UTM management, conversions, agents
 - [Claude Plugin](./docs/guides/claude-plugin.md) - Run Synter inside Claude Code / Claude Desktop
 
@@ -84,7 +84,7 @@ perf = client.analytics.get_performance(platform="google", date_range="LAST_7_DA
 - **Multi-platform**: Google, Reddit, LinkedIn, Microsoft, Meta, TikTok, X
 - **Typed methods**: Fully-typed campaign, keyword, conversion, creative, and audience tools
 - **Escape hatch**: `execute(scriptName, args, platform?)` reaches any of the 140+ backend scripts
-- **Same surface everywhere**: TypeScript, Python, and Rust ship today; Go and Java are coming soon
+- **Same surface everywhere**: TypeScript, Python, Rust, and Java ship today; Go is coming soon
 - **Production-tested transport**: every call already runs in production via the MCP server (Claude, Cursor, Codex, ChatGPT)
 
 ## 🔗 Links

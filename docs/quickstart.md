@@ -21,7 +21,7 @@ npm install @synterai/sdk-js
 pip install synter
 ```
 
-Other languages: [Rust](../sdk/rust/README.md) is live (`cargo add synter`); [Go](../sdk/go/README.md) and [Java](../sdk/java/README.md) are coming soon.
+Other languages: [Rust](../sdk/rust/README.md) is live (`cargo add synter`); [Java](../sdk/java/README.md) is live (`ai.syntermedia:synter-sdk:0.1.0` on Maven Central); [Go](../sdk/go/README.md) is coming soon.
 
 ## Get Your API Key
 

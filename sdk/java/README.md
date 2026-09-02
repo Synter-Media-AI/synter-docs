@@ -4,7 +4,7 @@
 
 Ship ads like you ship code. A typed Java client for managing Google, Meta, LinkedIn, Microsoft, Reddit, TikTok, and X ad campaigns from one client.
 
-> **🚧 Coming soon — not yet published.** The Java SDK is built but is **not** available on Maven Central (or any other repository) yet. The coordinate and snippet below are the planned surface; there is no `ai.syntermedia:synter-sdk:x.y.z` you can add to a `build.gradle`/`pom.xml` today. For a language that is live now, see the [TypeScript](../typescript/README.md), [Python](../python/README.md), or [Rust](../rust/README.md) SDKs.
+> **`0.1.0` — live on Maven Central** as `ai.syntermedia:synter-sdk`. Pre-1.0, so the surface may change before a stable `1.0`; pin a version in production. Requires Java 17+.
 
 ## Requirements
 
@@ -13,7 +13,7 @@ Ship ads like you ship code. A typed Java client for managing Google, Meta, Link
 
 ## Installing (planned)
 
-Once published to Maven Central:
+From Maven Central:
 
 ```kotlin
 // build.gradle.kts
