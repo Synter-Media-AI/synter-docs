@@ -4,7 +4,7 @@
 
 Ship ads like you ship code. A cross-platform advertising client for Google, Meta, LinkedIn, Microsoft, Reddit, TikTok, and X — built for AI agents and developers.
 
-> **`0.1.0` — live on crates.io.** Pre-1.0, so the surface may change before a stable `1.0`; pin a version in production.
+> **`0.1.1` — live on crates.io.** Pre-1.0, so the surface may change before a stable `1.0`; pin a version in production. `0.1.1` fixes `analytics().get_performance(..)` for `Platform::Google` and `Platform::Linkedin`, which in `0.1.0` sent the script filename (`pull_google_ads_data`) instead of the canonical script name (`pull_google_ads`).
 
 ## Installing
 

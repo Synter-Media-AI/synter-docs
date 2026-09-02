@@ -4,7 +4,7 @@
 
 Ship ads like you ship code. Manage Google, Meta, LinkedIn, Microsoft, Reddit, TikTok, and X ad campaigns from one client.
 
-> **`0.1.0` — live on PyPI.** `pip install synter`. Pre-1.0, so the surface may change before a stable `1.0`; pin a version in production.
+> **`0.1.2` — live on PyPI.** `pip install synter`. Pre-1.0, so the surface may change before a stable `1.0`; pin a version in production. `0.1.1`+ fixes `analytics.get_performance(platform="google" | "linkedin")`, which in `0.1.0` sent the script filename (`pull_google_ads_data`) instead of the canonical script name (`pull_google_ads`).
 
 It talks directly to `https://syntermedia.ai/api/v1/tools/run` — the same production endpoint the published `@synterai/mcp-server` npm package uses internally, so every call here has already been exercised in production by every MCP client (Claude, Cursor, Codex, ChatGPT).
 

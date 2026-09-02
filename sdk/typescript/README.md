@@ -4,7 +4,7 @@
 
 Ship ads like you ship code. One SDK for Google Ads, Meta, LinkedIn, Microsoft Ads, Reddit, TikTok, and X — with full types and IDE autocomplete.
 
-> **`0.1.0` — early release.** Live on npm and installable, but pre-1.0: the surface may change before a stable `1.0`. Pin a version in production.
+> **`0.1.2` — live on npm.** Pre-1.0: the surface may change before a stable `1.0`. Pin a version in production. `0.1.2` fixes `analytics.getPerformance({ platform: "google" | "linkedin" })`, which in `0.1.0`/`0.1.1` sent the script filename (`pull_google_ads_data`) instead of the canonical script name (`pull_google_ads`).
 
 ## What this talks to
 
