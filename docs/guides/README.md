@@ -8,6 +8,7 @@ In-depth guides for using Synter effectively.
 - [Conversion Tracking](./conversion-tracking.md) - Unified tracking across platforms
 - [AI Agents](./ai-agents.md) - Transparent, controllable optimization
 - [Claude Plugin](./claude-plugin.md) - Run Synter inside Claude Code / Claude Desktop
+- [CLI](./cli.md) - `synter` on the command line, and the headless path for agents
 
 ## Platform Integration
 

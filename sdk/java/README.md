@@ -11,7 +11,7 @@ Ship ads like you ship code. A typed Java client for managing Google, Meta, Link
 - Java 17+
 - A Synter API key — get one at [syntermedia.ai/developer](https://syntermedia.ai/developer) (format: `syn_` followed by 32 base64url characters)
 
-## Installing (planned)
+## Installing
 
 From Maven Central:
 
@@ -31,7 +31,7 @@ dependencies {
 </dependency>
 ```
 
-## Quick Start (planned)
+## Quick Start
 
 ```java
 import ai.syntermedia.sdk.Synter;
@@ -64,7 +64,7 @@ Map<String, Object> result = synter.campaigns().createSearch(CreateSearchCampaig
 
 > **⚠️ Server-side only.** Never hardcode the key — read it from an environment variable or secrets manager (`System.getenv("SYNTER_API_KEY")`). The key can spend money and modify ad accounts, so keep it out of client-side code.
 
-## Method reference (planned)
+## Method reference
 
 | Resource | Methods |
 |---|---|
@@ -81,10 +81,61 @@ Map<String, Object> result = synter.campaigns().createSearch(CreateSearchCampaig
 
 `synter.execute(scriptName, args, platform)` is the universal escape hatch — it can run any of the 140+ backend scripts by name, not just the ~25 covered by typed methods above. `args` is a plain `Map<String, Object>` of flag-name to value (e.g. `Map.of("status", "ENABLED")`).
 
-## While you wait
+## Pulling performance
 
-- Watch this repo for the Maven Central release.
-- Use the live [TypeScript](../typescript/README.md), [Python](../python/README.md), or [Rust](../rust/README.md) SDKs, or call the API directly (`POST https://syntermedia.ai/api/v1/tools/run`).
+```java
+import ai.syntermedia.sdk.Synter;
+import ai.syntermedia.sdk.SynterException;
+import ai.syntermedia.sdk.requests.GetPerformanceRequest;
+
+import java.util.Map;
+
+Synter synter = Synter.builder()
+    .apiKey(System.getenv("SYNTER_API_KEY"))
+    .build();
+
+Map<String, Object> performance = synter.analytics().getPerformance(
+    GetPerformanceRequest.builder()
+        .platform("google")
+        .dateRange("LAST_30_DAYS")
+        .build());
+```
+
+## Errors
+
+Every call reaches `POST https://syntermedia.ai/api/v1/tools/run`, so failures
+arrive as a typed code rather than a bare status. Handle these four; the rest
+are transport errors.
+
+| Code | Meaning | What to do |
+|---|---|---|
+| `AUTHENTICATION_REQUIRED` | No usable key on the request | Send a `syn_` key. The SDK sets `Authorization: Bearer` for you |
+| `SCOPE_MISSING` | The key lacks the scope this tool needs | Mint a key carrying the scope named in the response |
+| `INSUFFICIENT_CREDITS` | The workspace is out of credits | Top up, or check the balance first |
+| `UNKNOWN_SCRIPT` | No runnable script behind that name | Check the name. `execute` takes SCRIPT names, which are not always the MCP tool name |
+
+```java
+try {
+    Map<String, Object> result = synter.analytics().getPerformance(request);
+} catch (SynterException e) {
+    // e.getCode() is the code above; e.getStatus() the HTTP status.
+    if ("INSUFFICIENT_CREDITS".equals(e.getCode())) {
+        // back off, alert, or top up
+    }
+    throw e;
+}
+```
+
+## Authentication
+
+The SDK sends `Authorization: Bearer syn_...`. If you call the endpoint
+directly instead, three headers are accepted interchangeably:
+`Authorization: Bearer`, `X-Synter-Key`, and `X-API-Key`.
+
+## See also
+
+- The other SDKs: [TypeScript](../typescript/README.md), [Python](../python/README.md), [Rust](../rust/README.md), [Go](../go/README.md).
+- The [CLI guide](../../docs/guides/cli.md) for the same surface from a shell.
 - Full references: [syntermedia.ai/docs/sdks](https://syntermedia.ai/docs/sdks) and [syntermedia.ai/docs/api](https://syntermedia.ai/docs/api).
 
 ## License
