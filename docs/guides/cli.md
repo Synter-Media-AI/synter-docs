@@ -100,8 +100,24 @@ synter billing status --json
 synter billing checkout --plan solo --json
 ```
 
-`checkout` returns a URL for a human to enter a card. Once a card is saved, a
-plan can be started without a browser:
+`checkout` returns a URL for a human to enter a card. Add `--wait` to make it a
+single step: the CLI prints the link, opens it, and blocks until the purchase
+lands, then prints the new tier.
+
+```bash
+synter billing checkout --plan solo --wait
+```
+
+The link is printed before anything blocks, so it is still usable if no browser
+opens. `--no-browser` prints without launching one, which is what you want on a
+server. `--timeout <seconds>` bounds the wait, default 900. A timeout is
+reported as pending rather than failure, with the link repeated, because the
+checkout page usually still works.
+
+Under `--json` the progress lines go to stderr and stdout carries exactly one
+document, so `synter billing checkout --plan solo --wait --json | jq` is safe.
+
+Once a card is saved, a plan can be started without a browser at all:
 
 ```bash
 synter billing subscribe --plan solo --confirm --json   # requires 0.7.0
