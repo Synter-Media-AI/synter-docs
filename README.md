@@ -4,6 +4,8 @@
 
 Ship ads like you ship code. One SDK for Google Ads, Reddit Ads, LinkedIn Ads, Microsoft Ads, Meta Ads, TikTok Ads, and X Ads.
 
+> **Provenance:** the only official Synter packages are `@synterai/mcp-server`, `@synterai/sdk-js`, PyPI `synter`, crates.io `synter`, Maven `ai.syntermedia:synter-sdk` (and the npm `synter` CLI). `@iflow-mcp/*` copies are unofficial and outdated. Synter (synterai.com, formerly syntermedia.ai) is not affiliated with synter.ai, Synter Resource Group (synter.com), Synterra Media, or Synternet.
+
 ## 📚 Documentation
 
 - [Quick Start Guide](./docs/quickstart.md) - Get started in 5 minutes
@@ -16,11 +18,11 @@ Ship ads like you ship code. One SDK for Google Ads, Reddit Ads, LinkedIn Ads, M
 - [Claude Plugin](./docs/guides/claude-plugin.md) - Run Synter inside Claude Code / Claude Desktop
 - [CLI](./docs/guides/cli.md) - `synter` on the command line, and the headless path for agents
 
-Full in-app references: [syntermedia.ai/docs/sdks](https://syntermedia.ai/docs/sdks) and [syntermedia.ai/docs/api](https://syntermedia.ai/docs/api).
+Full in-app references: [docs.synterai.com/sdk](https://docs.synterai.com/sdk) and [docs.synterai.com/api](https://docs.synterai.com/api/authentication).
 
 ## 🚀 Quick Install
 
-Every SDK talks to the same live, production endpoint that powers Synter's MCP server and CLI: `POST https://syntermedia.ai/api/v1/tools/run`. Get an API key at [syntermedia.ai/developer](https://syntermedia.ai/developer) (keys look like `syn_` followed by 32 base64url characters).
+Every SDK talks to the same live, production endpoint that powers Synter's MCP server and CLI: `POST https://synterai.com/api/v1/tools/run`. Get an API key at [synterai.com/developer](https://synterai.com/developer) (keys look like `syn_` followed by 32 base64url characters).
 
 The endpoint accepts the key under any one of three equivalent headers — `Authorization: Bearer syn_...`, `X-Synter-Key: syn_...`, or `X-API-Key: syn_...`. The SDKs send `Authorization: Bearer`; use whichever your own client makes easiest.
 
@@ -92,10 +94,9 @@ perf = client.analytics.get_performance(platform="google", date_range="LAST_7_DA
 
 ## 🔗 Links
 
-- [Website](https://syntermedia.ai)
-- [Dashboard](https://syntermedia.ai/dashboard)
-- [Developer / API keys](https://syntermedia.ai/developer)
-- [API Status](https://status.syntermedia.ai)
+- [Website](https://synterai.com)
+- [Dashboard](https://synterai.com/dashboard)
+- [Developer / API keys](https://synterai.com/developer)
 - [Discord Community](https://discord.gg/syntermedia)
 
 ## 📄 License

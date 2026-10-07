@@ -6,7 +6,7 @@ Ship ads like you ship code. Manage Google, Meta, LinkedIn, Microsoft, Reddit, T
 
 > **`0.1.2` — live on PyPI.** `pip install synter`. Pre-1.0, so the surface may change before a stable `1.0`; pin a version in production. `0.1.1`+ fixes `analytics.get_performance(platform="google" | "linkedin")`, which in `0.1.0` sent the script filename (`pull_google_ads_data`) instead of the canonical script name (`pull_google_ads`).
 
-It talks directly to `https://syntermedia.ai/api/v1/tools/run` — the same production endpoint the published `@synterai/mcp-server` npm package uses internally, so every call here has already been exercised in production by every MCP client (Claude, Cursor, Codex, ChatGPT).
+It talks directly to `https://synterai.com/api/v1/tools/run` — the same production endpoint the published `@synterai/mcp-server` npm package uses internally, so every call here has already been exercised in production by every MCP client (Claude, Cursor, Codex, ChatGPT).
 
 ## Status
 
@@ -25,7 +25,7 @@ Requires Python 3.9+.
 
 ## Getting an API key
 
-Create a key at [syntermedia.ai/developer](https://syntermedia.ai/developer). Keys look like `syn_` followed by 32 base64url characters. Treat it like a password — anyone with it can act on your connected ad accounts.
+Create a key at [synterai.com/developer](https://synterai.com/developer). Keys look like `syn_` followed by 32 base64url characters. Treat it like a password — anyone with it can act on your connected ad accounts.
 
 ## Quick Start
 
@@ -67,7 +67,7 @@ asyncio.run(main())
 
 ### The escape hatch: `execute()`
 
-Every backend script (140+ across 19 platforms) is reachable even without a typed method, via `execute()` — the SDK-level mirror of the `run_tool` MCP tool:
+Every backend script (140+ scripts) is reachable even without a typed method, via `execute()` — the SDK-level mirror of the `run_tool` MCP tool:
 
 ```python
 # Idiomatic dict form (recommended): converted to CLI flags automatically.
@@ -130,7 +130,7 @@ Requests are retried up to 3 times with exponential backoff (1s base, 10s cap), 
 | `client.audiences` | `stage_artifact`, `sync`, `manage` |
 | `client.*` (top level) | `list_ad_accounts`, `upload_image`, `list_landing_pages`, `execute` |
 
-For the full method reference, see [syntermedia.ai/docs/sdks](https://syntermedia.ai/docs/sdks) and [syntermedia.ai/docs/api](https://syntermedia.ai/docs/api).
+For the full method reference, see [docs.synterai.com/sdk](https://docs.synterai.com/sdk) and [docs.synterai.com/api](https://docs.synterai.com/api/authentication).
 
 ## Known issues (preserved, not silently fixed)
 
@@ -142,9 +142,13 @@ This SDK calls the real backend exactly as it behaves in production today, inclu
 
 ## Links
 
-- [Documentation](https://syntermedia.ai/docs/sdks)
+- [Documentation](https://docs.synterai.com/sdk)
 - [Quick Start](../../docs/quickstart.md)
 - [Guides](../../docs/guides/README.md)
+
+## Write paths and approvals
+
+Copy-paste examples for pausing a campaign and changing a daily budget, and how a held write comes back (HTTP 202 `pending_review` with an `audit_id`), are on [docs.synterai.com/sdk/python](https://docs.synterai.com/sdk/python). Which writes run immediately and which wait for a person on each surface: [Approval model](https://docs.synterai.com/mcp/approval-model).
 
 ## License
 
