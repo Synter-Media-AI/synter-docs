@@ -23,7 +23,7 @@ synter = "0.1"
 
 ## Getting an API key
 
-1. Go to [syntermedia.ai/developer](https://syntermedia.ai/developer) and generate an API key (format: `syn_` followed by 32 base64url characters).
+1. Go to [synterai.com/developer](https://synterai.com/developer) and generate an API key (format: `syn_` followed by 32 base64url characters).
 2. Set it as an environment variable, e.g. `SYNTER_API_KEY`, or pass it directly to the client builder.
 
 ## Quick Start
@@ -85,7 +85,7 @@ Every method mirrors one of the 25 tools in the shared tool catalog, grouped by 
 
 `client.execute(script_name, args, platform)` is the universal escape hatch — it mirrors the MCP server's `run_tool`, letting you call any of the 140+ backend scripts beyond the 25 typed methods above. `args` is a `HashMap<String, serde_json::Value>` of flag-name -> value (e.g. `{"status": "ENABLED"}`); the SDK converts it to the backend's `--flag value` wire form internally.
 
-For the full method reference, see [syntermedia.ai/docs/sdks](https://syntermedia.ai/docs/sdks) and [syntermedia.ai/docs/api](https://syntermedia.ai/docs/api).
+For the full method reference, see [docs.synterai.com/sdk](https://docs.synterai.com/sdk) and [docs.synterai.com/api](https://docs.synterai.com/api/authentication).
 
 ## Error handling
 
@@ -109,9 +109,15 @@ These mirror real, current production behavior of the Synter backend — they ar
 
 ## Links
 
-- [Documentation](https://syntermedia.ai/docs/sdks)
+- [Documentation](https://docs.synterai.com/sdk)
 - [Quick Start](../../docs/quickstart.md)
 - [Guides](../../docs/guides/README.md)
+
+## Write paths and approvals
+
+Copy-paste examples for pausing a campaign and changing a daily budget, and how a held write comes back (HTTP 202 `pending_review` with an `audit_id`), are on [docs.synterai.com/sdk/rust](https://docs.synterai.com/sdk/rust). Which writes run immediately and which wait for a person on each surface: [Approval model](https://docs.synterai.com/mcp/approval-model).
+
+**Known issue (0.1.x):** `updateBudget`/`update_budget` sends `--budget`, which the API rejects with HTTP 400. The fix is in the SDK source and ships in the next release; until then use the generic `execute` call shown in the docs page above.
 
 ## License
 

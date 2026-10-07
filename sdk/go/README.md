@@ -14,7 +14,7 @@ go get github.com/Synter-Media-AI/synter-go
 
 ## Getting an API key
 
-Get a `syn_...` API key at [syntermedia.ai/developer](https://syntermedia.ai/developer).
+Get a `syn_...` API key at [synterai.com/developer](https://synterai.com/developer).
 
 > **⚠️ Server-side only.** The key is a secret that can spend money and modify ad accounts. Use this SDK from a backend, never ship it in client code.
 
@@ -81,8 +81,8 @@ func main() {
 ## While you wait
 
 - Watch this repo for the tagged release.
-- Use the live [TypeScript](../typescript/README.md), [Python](../python/README.md), or [Rust](../rust/README.md) SDKs, or call the API directly (`POST https://syntermedia.ai/api/v1/tools/run`).
-- Full references: [syntermedia.ai/docs/sdks](https://syntermedia.ai/docs/sdks) and [syntermedia.ai/docs/api](https://syntermedia.ai/docs/api).
+- Use the live [TypeScript](../typescript/README.md), [Python](../python/README.md), or [Rust](../rust/README.md) SDKs, or call the API directly (`POST https://synterai.com/api/v1/tools/run`).
+- Full references: [docs.synterai.com/sdk](https://docs.synterai.com/sdk) and [docs.synterai.com/api](https://docs.synterai.com/api/authentication).
 
 ## License
 

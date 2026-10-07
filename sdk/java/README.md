@@ -4,12 +4,12 @@
 
 Ship ads like you ship code. A typed Java client for managing Google, Meta, LinkedIn, Microsoft, Reddit, TikTok, and X ad campaigns from one client.
 
-> **`0.1.0` — live on Maven Central** as `ai.syntermedia:synter-sdk`. Pre-1.0, so the surface may change before a stable `1.0`; pin a version in production. Requires Java 17+.
+> **`0.1.1` — live on Maven Central** ([direct link](https://repo1.maven.org/maven2/ai/syntermedia/synter-sdk/0.1.1/); the search.maven.org index can lag, but Maven and Gradle resolve it fine) as `ai.syntermedia:synter-sdk`. Pre-1.0, so the surface may change before a stable `1.0`; pin a version in production. Requires Java 17+.
 
 ## Requirements
 
 - Java 17+
-- A Synter API key — get one at [syntermedia.ai/developer](https://syntermedia.ai/developer) (format: `syn_` followed by 32 base64url characters)
+- A Synter API key — get one at [synterai.com/developer](https://synterai.com/developer) (format: `syn_` followed by 32 base64url characters)
 
 ## Installing
 
@@ -18,7 +18,7 @@ From Maven Central:
 ```kotlin
 // build.gradle.kts
 dependencies {
-    implementation("ai.syntermedia:synter-sdk:0.1.0")
+    implementation("ai.syntermedia:synter-sdk:0.1.1")
 }
 ```
 
@@ -27,7 +27,7 @@ dependencies {
 <dependency>
   <groupId>ai.syntermedia</groupId>
   <artifactId>synter-sdk</artifactId>
-  <version>0.1.0</version>
+  <version>0.1.1</version>
 </dependency>
 ```
 
@@ -103,7 +103,7 @@ Map<String, Object> performance = synter.analytics().getPerformance(
 
 ## Errors
 
-Every call reaches `POST https://syntermedia.ai/api/v1/tools/run`, so failures
+Every call reaches `POST https://synterai.com/api/v1/tools/run`, so failures
 arrive as a typed code rather than a bare status. Handle these four; the rest
 are transport errors.
 
@@ -130,13 +130,19 @@ try {
 
 The SDK sends `Authorization: Bearer syn_...`. If you call the endpoint
 directly instead, three headers are accepted interchangeably:
-`Authorization: Bearer`, `X-Synter-Key`, and `X-API-Key`.
+`Authorization: Bearer`, `X-Synter-Key`, and `X-API-Key` on `https://synterai.com/api/v1/tools/run`. The full per-surface table (REST, SDKs, hosted MCP) is at [docs.synterai.com/api/authentication](https://docs.synterai.com/api/authentication).
 
 ## See also
 
 - The other SDKs: [TypeScript](../typescript/README.md), [Python](../python/README.md), [Rust](../rust/README.md), [Go](../go/README.md).
 - The [CLI guide](../../docs/guides/cli.md) for the same surface from a shell.
-- Full references: [syntermedia.ai/docs/sdks](https://syntermedia.ai/docs/sdks) and [syntermedia.ai/docs/api](https://syntermedia.ai/docs/api).
+- Full references: [docs.synterai.com/sdk](https://docs.synterai.com/sdk) and [docs.synterai.com/api](https://docs.synterai.com/api/authentication).
+
+## Write paths and approvals
+
+Copy-paste examples for pausing a campaign and changing a daily budget, and how a held write comes back (HTTP 202 `pending_review` with an `audit_id`), are on [docs.synterai.com/sdk/java](https://docs.synterai.com/sdk/java). Which writes run immediately and which wait for a person on each surface: [Approval model](https://docs.synterai.com/mcp/approval-model).
+
+**Known issue (0.1.x):** `updateBudget`/`update_budget` sends `--budget`, which the API rejects with HTTP 400. The fix is in the SDK source and ships in the next release; until then use the generic `execute` call shown in the docs page above.
 
 ## License
 

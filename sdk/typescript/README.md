@@ -8,7 +8,7 @@ Ship ads like you ship code. One SDK for Google Ads, Meta, LinkedIn, Microsoft A
 
 ## What this talks to
 
-Every method calls the same live, production endpoint that powers Synter's MCP server (`@synterai/mcp-server`) and the `synter` CLI: `POST https://syntermedia.ai/api/v1/tools/run`. There is no separate "SDK backend" — if a method works here, it works because the exact same call already works for every MCP client (Claude, Cursor, Codex, ChatGPT) today.
+Every method calls the same live, production endpoint that powers Synter's MCP server (`@synterai/mcp-server`) and the `synter` CLI: `POST https://synterai.com/api/v1/tools/run`. There is no separate "SDK backend" — if a method works here, it works because the exact same call already works for every MCP client (Claude, Cursor, Codex, ChatGPT) today.
 
 ## Installation
 
@@ -18,7 +18,7 @@ npm install @synterai/sdk-js
 
 ## Authentication
 
-Get an API key at [syntermedia.ai/developer](https://syntermedia.ai/developer). Keys look like `syn_` followed by 32 base64url characters.
+Get an API key at [synterai.com/developer](https://synterai.com/developer). Keys look like `syn_` followed by 32 base64url characters.
 
 > **⚠️ Server-side only.** Your `SYNTER_API_KEY` is a secret that can spend money and modify your ad accounts. Use this SDK from a **backend** — a Node service, a Next.js API route or Server Action, an edge/serverless function. **Never** instantiate `Synter` in client-side code (React components, browser bundles, mobile apps); the key would ship to every visitor. For a React/SPA frontend, call your own backend, and have the backend call Synter.
 
@@ -85,7 +85,7 @@ Methods are grouped by category, matching the tool catalog. Every method takes a
 
 `synter.execute(scriptName, args, platform?)` is the universal escape hatch: it can call any of the 140+ backend scripts beyond the typed methods above, converting an idiomatic `{ flagName: value }` map into the CLI-flag wire format internally.
 
-For the full method reference, see [syntermedia.ai/docs/sdks](https://syntermedia.ai/docs/sdks) and [syntermedia.ai/docs/api](https://syntermedia.ai/docs/api).
+For the full method reference, see [docs.synterai.com/sdk](https://docs.synterai.com/sdk) and [docs.synterai.com/api](https://docs.synterai.com/api/authentication).
 
 ## Conversions
 
@@ -130,9 +130,15 @@ These mirror real, current production behavior of the backend scripts. The SDK c
 
 ## Links
 
-- [Documentation](https://syntermedia.ai/docs/sdks)
+- [Documentation](https://docs.synterai.com/sdk)
 - [Quick Start](../../docs/quickstart.md)
 - [Guides](../../docs/guides/README.md)
+
+## Write paths and approvals
+
+Copy-paste examples for pausing a campaign and changing a daily budget, and how a held write comes back (HTTP 202 `pending_review` with an `audit_id`), are on [docs.synterai.com/sdk/typescript](https://docs.synterai.com/sdk/typescript). Which writes run immediately and which wait for a person on each surface: [Approval model](https://docs.synterai.com/mcp/approval-model).
+
+**Known issue (0.1.x):** `updateBudget`/`update_budget` sends `--budget`, which the API rejects with HTTP 400. The fix is in the SDK source and ships in the next release; until then use the generic `execute` call shown in the docs page above.
 
 ## License
 

@@ -5,7 +5,7 @@ Get started with Synter in 5 minutes.
 ## Prerequisites
 
 - Node.js 18+ or Python 3.9+
-- A Synter API key ([get one here](https://syntermedia.ai/developer))
+- A Synter API key ([get one here](https://synterai.com/developer))
 
 ## Installation
 
@@ -21,12 +21,12 @@ npm install @synterai/sdk-js
 pip install synter
 ```
 
-Other languages: [Rust](../sdk/rust/README.md) is live (`cargo add synter`); [Java](../sdk/java/README.md) is live (`ai.syntermedia:synter-sdk:0.1.0` on Maven Central); [Go](../sdk/go/README.md) is coming soon.
+Other languages: [Rust](../sdk/rust/README.md) is live (`cargo add synter`); [Java](../sdk/java/README.md) is live (`ai.syntermedia:synter-sdk:0.1.1` on Maven Central); [Go](../sdk/go/README.md) is coming soon.
 
 ## Get Your API Key
 
-1. Sign up at [syntermedia.ai](https://syntermedia.ai)
-2. Go to [syntermedia.ai/developer](https://syntermedia.ai/developer)
+1. Sign up at [synterai.com](https://synterai.com)
+2. Go to [synterai.com/developer](https://synterai.com/developer)
 3. Create a new API key
 4. Copy the key (starts with `syn_`, followed by 32 base64url characters)
 
@@ -148,4 +148,4 @@ client.execute("google_ads_list_audiences", {"status": "ENABLED"}, "google")
 - [UTM Management Guide](./guides/utm-management.md)
 - [Conversion Tracking Guide](./guides/conversion-tracking.md)
 - [AI Agents Guide](./guides/ai-agents.md)
-- Full references: [syntermedia.ai/docs/sdks](https://syntermedia.ai/docs/sdks) and [syntermedia.ai/docs/api](https://syntermedia.ai/docs/api)
+- Full references: [docs.synterai.com/sdk](https://docs.synterai.com/sdk) and [docs.synterai.com/api](https://docs.synterai.com/api/authentication)
