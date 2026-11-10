@@ -6,7 +6,7 @@ npm install -g synter
 
 The CLI and the SDKs are the same product from two angles. Both authenticate
 with a `syn_` API key and both dispatch to
-`POST https://syntermedia.ai/api/v1/tools/run`. Use the CLI when the caller is a
+`POST https://synterai.com/api/v1/tools/run`. Use the CLI when the caller is a
 shell or an agent with shell access; use an SDK when the caller is your
 application.
 

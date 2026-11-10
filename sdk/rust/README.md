@@ -2,9 +2,9 @@
 
 **The developer-first SDK for multi-platform ad management.**
 
-Ship ads like you ship code. A cross-platform advertising client for Google, Meta, LinkedIn, Microsoft, Reddit, TikTok, and X — built for AI agents and developers.
+Ship ads like you ship code. A cross-platform advertising client for **16 direct ad platforms** (Google, Meta, LinkedIn, Microsoft, Reddit, TikTok, X, Pinterest, Snapchat, Spotify, Amazon Ads, Amazon DSP, The Trade Desk, OpenAI Ads, DV360, StackAdapt) and **43 platforms** via `execute` — built for AI agents and developers.
 
-> **`0.1.1` — live on crates.io.** Pre-1.0, so the surface may change before a stable `1.0`; pin a version in production. `0.1.1` fixes `analytics().get_performance(..)` for `Platform::Google` and `Platform::Linkedin`, which in `0.1.0` sent the script filename (`pull_google_ads_data`) instead of the canonical script name (`pull_google_ads`).
+> **`0.1.2` — live on crates.io.** Cross-platform `campaigns().list(..)`, `campaigns().pause(..)`, `campaigns().update_budget(..)`, and `analytics().get_performance(..)` route natively across all 16 direct platforms.
 
 ## Installing
 
@@ -23,7 +23,7 @@ synter = "0.1"
 
 ## Getting an API key
 
-1. Go to [syntermedia.ai/developer](https://syntermedia.ai/developer) and generate an API key (format: `syn_` followed by 32 base64url characters).
+1. Go to [synterai.com/developer](https://synterai.com/developer) and generate an API key (format: `syn_` followed by 32 base64url characters).
 2. Set it as an environment variable, e.g. `SYNTER_API_KEY`, or pass it directly to the client builder.
 
 ## Quick Start
@@ -48,7 +48,7 @@ async fn main() -> Result<(), synter::SynterError> {
             CreateSearchCampaignRequest::builder()
                 .campaign_name("Q4 Launch")
                 .daily_budget(50.0)
-                .final_url("https://example.com/landing")
+                .final_url("https://synterai.com/get-started")
                 .keywords(vec!["project management software".to_string()])
                 .headlines(vec![
                     "Ship Projects Faster".to_string(),
@@ -83,9 +83,9 @@ Every method mirrors one of the 25 tools in the shared tool catalog, grouped by 
 | `client.audiences()` | `stage_artifact`, `sync`, `manage` |
 | `client` (top level) | `list_ad_accounts`, `upload_image`, `list_landing_pages`, `execute` |
 
-`client.execute(script_name, args, platform)` is the universal escape hatch — it mirrors the MCP server's `run_tool`, letting you call any of the 140+ backend scripts beyond the 25 typed methods above. `args` is a `HashMap<String, serde_json::Value>` of flag-name -> value (e.g. `{"status": "ENABLED"}`); the SDK converts it to the backend's `--flag value` wire form internally.
+`client.execute(script_name, args, platform)` is the universal escape hatch — it mirrors the MCP server's `run_tool`, letting you call any of the 155+ backend scripts beyond the 25 typed methods above. `args` is a `HashMap<String, serde_json::Value>` of flag-name -> value (e.g. `{"status": "ENABLED"}`); the SDK converts it to the backend's `--flag value` wire form internally.
 
-For the full method reference, see [syntermedia.ai/docs/sdks](https://syntermedia.ai/docs/sdks) and [syntermedia.ai/docs/api](https://syntermedia.ai/docs/api).
+For the full method reference, see [docs.synterai.com/sdk/rust](https://docs.synterai.com/sdk/rust) and [docs.synterai.com/api](https://docs.synterai.com/api).
 
 ## Error handling
 
@@ -99,17 +99,14 @@ Every fallible call returns `Result<serde_json::Value, SynterError>`. `SynterErr
 
 The client retries up to 3 times with exponential backoff (1s base, 10s cap) on `429` responses (honoring `Retry-After` when present) and on network/timeout errors. Other 4xx responses are never retried. Configurable via `ClientBuilder::max_retries`, `retry_base_delay`, and `retry_max_delay`.
 
-## Known issues (preserved on purpose)
+## Cross-Platform Write Routing
 
-These mirror real, current production behavior of the Synter backend — they are not bugs in this SDK, and this SDK intentionally does not "fix" them (doing so would make calls fail against the real API):
-
-1. `campaigns().pause(...)` and `campaigns().update_budget(...)` require a `platform` argument (matching the tool's schema, which advertises support for all 7 platforms), but the live dispatch always hardcodes `platform=google` regardless of what's passed.
-2. `Client::upload_image(...)` accepts an optional platform, but the live dispatch always hardcodes `platform=google`.
-3. `campaigns().create_display(...)` and `campaigns().create_pmax(...)` use inconsistent flag names for the same concept: `--landscape-image` / `--square-image` vs. `--landscape-image-url` / `--square-image-url`.
+- `campaigns().pause(...)` and `campaigns().update_budget(...)` dispatch natively to the platform-specific script (`pause_campaign`, `meta_ads_pause_campaign`, `linkedin_ads_pause_campaign`, `microsoft_ads_pause_campaign`, `reddit_ads_pause_campaign`, `tiktok_ads_pause_campaign`, `x_ads_pause_campaign`, etc.) across all 16 direct platforms.
+- For campaign creation on non-Google/Meta/LinkedIn/Reddit platforms, use `client.execute("<platform>_create_campaign", args, Some(platform))`.
 
 ## Links
 
-- [Documentation](https://syntermedia.ai/docs/sdks)
+- [Documentation](https://docs.synterai.com/sdk/rust)
 - [Quick Start](../../docs/quickstart.md)
 - [Guides](../../docs/guides/README.md)
 

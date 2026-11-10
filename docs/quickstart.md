@@ -5,7 +5,7 @@ Get started with Synter in 5 minutes.
 ## Prerequisites
 
 - Node.js 18+ or Python 3.9+
-- A Synter API key ([get one here](https://syntermedia.ai/developer))
+- A Synter API key ([get one here](https://synterai.com/developer))
 
 ## Installation
 
@@ -21,12 +21,12 @@ npm install @synterai/sdk-js
 pip install synter
 ```
 
-Other languages: [Rust](../sdk/rust/README.md) is live (`cargo add synter`); [Java](../sdk/java/README.md) is live (`ai.syntermedia:synter-sdk:0.1.0` on Maven Central); [Go](../sdk/go/README.md) is coming soon.
+Other languages: [Rust](../sdk/rust/README.md) is live (`cargo add synter`); [Java](../sdk/java/README.md) is live (`ai.syntermedia:synter-sdk:0.1.0` on Maven Central); [Go](../sdk/go/README.md) (`github.com/Synter-Media-AI/synter-go`).
 
 ## Get Your API Key
 
-1. Sign up at [syntermedia.ai](https://syntermedia.ai)
-2. Go to [syntermedia.ai/developer](https://syntermedia.ai/developer)
+1. Sign up at [synterai.com](https://synterai.com)
+2. Go to [synterai.com/developer](https://synterai.com/developer)
 3. Create a new API key
 4. Copy the key (starts with `syn_`, followed by 32 base64url characters)
 
@@ -49,7 +49,7 @@ const result = await synter.campaigns.createSearch({
   keywords: ['saas analytics', 'data platform'],
   headlines: ['Fast. Light. Yours.', 'New Season, New Data', 'Free Trial Today'],
   descriptions: ['Analytics your team will actually use.', 'Get started in minutes.'],
-  final_url: 'https://example.com',
+  final_url: 'https://synterai.com/get-started',
 });
 
 console.log(result);
@@ -68,17 +68,17 @@ result = client.campaigns.create_search(
     keywords=["saas analytics", "data platform"],
     headlines=["Fast Data", "Best Analytics 2026", "Free Trial"],
     descriptions=["Analytics your team will actually use.", "Get started in minutes."],
-    final_url="https://example.com",
+    final_url="https://synterai.com/get-started",
 )
 print(result)
 ```
 
 ## List Campaigns
 
-If no platform is given, this defaults to Google.
+If no platform is given, this defaults to Google. All 16 direct platforms are supported (`google`, `meta`, `linkedin`, `microsoft`, `reddit`, `tiktok`, `x`, `pinterest`, `snapchat`, `spotify`, `amazon`, `amazon-dsp`, `trade-desk`, `openai`, `dv360`, `stackadapt`).
 
 ```typescript
-const campaigns = await synter.campaigns.list({ status: 'ENABLED', limit: 10 });
+const campaigns = await synter.campaigns.list({ platform: 'google', status: 'ENABLED', limit: 10 });
 ```
 
 ```python
@@ -87,10 +87,10 @@ campaigns = client.campaigns.list(platform="google", status="ENABLED", limit=10)
 
 ## Pull Performance Metrics
 
-Get impressions, clicks, spend, conversions, and ROAS for your campaigns.
+Get impressions, clicks, spend, conversions, and ROAS for your campaigns (`$0.00` Free Read Access).
 
 ```typescript
-const perf = await synter.analytics.getPerformance({ date_range: 'LAST_30_DAYS' });
+const perf = await synter.analytics.getPerformance({ platform: 'google', date_range: 'LAST_30_DAYS' });
 ```
 
 ```python
@@ -98,6 +98,18 @@ perf = client.analytics.get_performance(platform="google", date_range="LAST_30_D
 ```
 
 Valid `date_range` values: `TODAY`, `YESTERDAY`, `LAST_7_DAYS`, `LAST_30_DAYS`, `THIS_MONTH`, `LAST_MONTH`.
+
+## Pause or Update Budget Across Platforms
+
+```typescript
+await synter.campaigns.pause({ campaign_id: 'camp_123', platform: 'meta' });
+await synter.campaigns.updateBudget({ campaign_id: 'camp_123', platform: 'linkedin', daily_budget: 75 });
+```
+
+```python
+client.campaigns.pause(campaign_id="camp_123", platform="meta")
+client.campaigns.update_budget(campaign_id="camp_123", platform="linkedin", daily_budget=75)
+```
 
 ## Set Up Conversion Tracking
 
@@ -108,12 +120,12 @@ Create a Google Ads conversion action (returns the conversion ID and label for G
 await synter.conversions.create({ name: 'Signup', category: 'SIGNUP', value: 25 });
 
 // Verify gtag.js / GTM / pixel installation
-await synter.conversions.diagnoseTracking({ url: 'https://example.com' });
+await synter.conversions.diagnoseTracking({ url: 'https://synterai.com' });
 ```
 
 ```python
 client.conversions.create(name="Signup", category="SIGNUP", value=25)
-client.conversions.diagnose_tracking(url="https://example.com")
+client.conversions.diagnose_tracking(url="https://synterai.com")
 ```
 
 ## Generate AI Creatives
@@ -130,7 +142,7 @@ image = client.creative.generate_image(prompt="a running shoe on a cloud, produc
 
 ## The Escape Hatch
 
-The typed methods cover the 25 most common tools. To reach any of the 140+ backend scripts, use `execute`:
+The typed methods cover the 25 most common tools. To reach any of the 155+ backend scripts across all 43 platforms, use `execute`:
 
 ```typescript
 await synter.execute('google_ads_list_audiences', { status: 'ENABLED' }, 'google');
@@ -148,4 +160,4 @@ client.execute("google_ads_list_audiences", {"status": "ENABLED"}, "google")
 - [UTM Management Guide](./guides/utm-management.md)
 - [Conversion Tracking Guide](./guides/conversion-tracking.md)
 - [AI Agents Guide](./guides/ai-agents.md)
-- Full references: [syntermedia.ai/docs/sdks](https://syntermedia.ai/docs/sdks) and [syntermedia.ai/docs/api](https://syntermedia.ai/docs/api)
+- Full references: [docs.synterai.com/sdk](https://docs.synterai.com/sdk) and [docs.synterai.com/api](https://docs.synterai.com/api)

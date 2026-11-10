@@ -13,9 +13,9 @@ In Claude Code:
 /plugin install synter@synter
 ```
 
-When enabling, paste your Synter API key (`syn_...`) — or leave it blank and run `/synter:quickstart` to onboard and get one. Create a key at [syntermedia.ai/developer](https://syntermedia.ai/developer).
+When enabling, paste your Synter API key (`syn_...`) — or leave it blank and run `/synter:quickstart` to onboard and get one. Create a key at [synterai.com/developer](https://synterai.com/developer).
 
-Free GA4 and onboarding tools work with no key and no credits.
+Free GA4, reporting, campaign inspection, and onboarding tools work with `$0.00` usage cost.
 
 > Requires Claude Code with plugin support. Campaign write actions spend real money — every spend asks for your approval first.
 
@@ -81,7 +81,7 @@ If you only want the tools (no plugin), add the Synter MCP directly.
   "mcpServers": {
     "synter": {
       "type": "http",
-      "url": "https://mcp.syntermedia.ai",
+      "url": "https://mcp.synterai.com/mcp",
       "headers": { "X-Synter-Key": "YOUR_API_KEY" }
     }
   }

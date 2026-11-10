@@ -2,15 +2,15 @@
 
 **The developer-first SDK for multi-platform ad management.**
 
-Ship ads like you ship code. Manage Google, Meta, LinkedIn, Microsoft, Reddit, TikTok, and X ad campaigns from one client.
+Ship ads like you ship code. Manage **16 direct ad platforms** (Google, Meta, LinkedIn, Microsoft, Reddit, TikTok, X, Pinterest, Snapchat, Spotify, Amazon Ads, Amazon DSP, The Trade Desk, OpenAI Ads, DV360, StackAdapt) and **43 total platforms** via `execute()` from one client.
 
-> **`0.1.2` — live on PyPI.** `pip install synter`. Pre-1.0, so the surface may change before a stable `1.0`; pin a version in production. `0.1.1`+ fixes `analytics.get_performance(platform="google" | "linkedin")`, which in `0.1.0` sent the script filename (`pull_google_ads_data`) instead of the canonical script name (`pull_google_ads`).
+> **`0.1.3` — live on PyPI.** `pip install synter`. Cross-platform `campaigns.list`, `campaigns.pause`, `campaigns.update_budget`, and `analytics.get_performance` route natively across all 16 direct platforms.
 
-It talks directly to `https://syntermedia.ai/api/v1/tools/run` — the same production endpoint the published `@synterai/mcp-server` npm package uses internally, so every call here has already been exercised in production by every MCP client (Claude, Cursor, Codex, ChatGPT).
+It talks directly to `https://synterai.com/api/v1/tools/run` — the same production endpoint the published `@synterai/mcp-server` npm package uses internally, so every call here has already been exercised in production by every MCP client (Claude, Cursor, Codex, ChatGPT).
 
 ## Status
 
-- **Sync client (`Synter`)**: fully implemented, all 25 tools.
+- **Sync client (`Synter`)**: fully implemented, all 25 typed tools + `execute()` for all 155+ scripts.
 - **Async client (`AsyncSynter`)**: fully implemented, mirrors the sync client's entire surface.
 
 ## Installation
@@ -25,7 +25,7 @@ Requires Python 3.9+.
 
 ## Getting an API key
 
-Create a key at [syntermedia.ai/developer](https://syntermedia.ai/developer). Keys look like `syn_` followed by 32 base64url characters. Treat it like a password — anyone with it can act on your connected ad accounts.
+Create a key at [synterai.com/developer](https://synterai.com/developer). Keys look like `syn_` followed by 32 base64url characters. Treat it like a password — anyone with it can act on your connected ad accounts.
 
 ## Quick Start
 
@@ -37,6 +37,10 @@ client = Synter(api_key="syn_...")  # or read from an env var yourself
 # List campaigns (defaults to Google if no platform is given)
 campaigns = client.campaigns.list(platform="google", status="ENABLED", limit=20)
 
+# Pause or update budget across any of the 16 direct platforms
+client.campaigns.pause(campaign_id="camp_123", platform="meta")
+client.campaigns.update_budget(campaign_id="camp_123", platform="linkedin", daily_budget=75)
+
 # Create a Search campaign
 result = client.campaigns.create_search(
     campaign_name="Q4 Launch",
@@ -44,10 +48,10 @@ result = client.campaigns.create_search(
     keywords=["running shoes", "trail shoes"],
     headlines=["Buy Shoes Now", "Best Shoes 2026", "Free Shipping"],
     descriptions=["Great shoes for less.", "Shop today."],
-    final_url="https://example.com/shoes",
+    final_url="https://synterai.com/get-started",
 )
 
-# Pull performance metrics
+# Pull performance metrics ($0.00 Free Read Access)
 perf = client.analytics.get_performance(platform="google", date_range="LAST_7_DAYS")
 ```
 
@@ -67,7 +71,7 @@ asyncio.run(main())
 
 ### The escape hatch: `execute()`
 
-Every backend script (140+ across 19 platforms) is reachable even without a typed method, via `execute()` — the SDK-level mirror of the `run_tool` MCP tool:
+Every backend script (155+ across all supported platforms) is reachable even without a typed method, via `execute()` — the SDK-level mirror of the `run_tool` MCP tool:
 
 ```python
 # Idiomatic dict form (recommended): converted to CLI flags automatically.
@@ -89,7 +93,7 @@ client.conversions.create(name="Signup", category="SIGNUP", value=25)
 client.conversions.list()
 
 # Check whether tracking (gtag.js / GTM / pixel) is installed on a site
-client.conversions.diagnose_tracking(url="https://example.com")
+client.conversions.diagnose_tracking(url="https://synterai.com")
 ```
 
 ## Error handling
@@ -130,19 +134,16 @@ Requests are retried up to 3 times with exponential backoff (1s base, 10s cap), 
 | `client.audiences` | `stage_artifact`, `sync`, `manage` |
 | `client.*` (top level) | `list_ad_accounts`, `upload_image`, `list_landing_pages`, `execute` |
 
-For the full method reference, see [syntermedia.ai/docs/sdks](https://syntermedia.ai/docs/sdks) and [syntermedia.ai/docs/api](https://syntermedia.ai/docs/api).
+For the full method reference, see [docs.synterai.com/sdk/python](https://docs.synterai.com/sdk/python) and [docs.synterai.com/api](https://docs.synterai.com/api).
 
-## Known issues (preserved, not silently fixed)
+## Cross-Platform Write Routing
 
-This SDK calls the real backend exactly as it behaves in production today, including three known quirks:
-
-1. `campaigns.pause()` and `campaigns.update_budget()` accept a `platform` argument (schema parity) but always dispatch with `platform=google` regardless of what you pass.
-2. `upload_image()` accepts an optional `platform` argument but always dispatches with `platform=google`.
-3. `campaigns.create_display()` uses backend flags `--landscape-image`/`--square-image`, while `campaigns.create_pmax()` uses `--landscape-image-url`/`--square-image-url`. The wire flags genuinely differ because the two backend scripts differ.
+- `campaigns.pause(campaign_id=..., platform=...)` and `campaigns.update_budget(campaign_id=..., platform=..., daily_budget=...)` route natively to the platform-specific script (`pause_campaign`, `meta_ads_pause_campaign`, `linkedin_ads_pause_campaign`, `microsoft_ads_pause_campaign`, `reddit_ads_pause_campaign`, `tiktok_ads_pause_campaign`, `x_ads_pause_campaign`, etc.) across all 16 direct platforms.
+- For campaign creation on non-Google/Meta/LinkedIn/Reddit platforms, use `client.execute("<platform>_create_campaign", args, platform)`.
 
 ## Links
 
-- [Documentation](https://syntermedia.ai/docs/sdks)
+- [Documentation](https://docs.synterai.com/sdk/python)
 - [Quick Start](../../docs/quickstart.md)
 - [Guides](../../docs/guides/README.md)
 

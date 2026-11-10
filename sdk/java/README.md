@@ -2,14 +2,14 @@
 
 **The developer-first SDK for multi-platform ad management.**
 
-Ship ads like you ship code. A typed Java client for managing Google, Meta, LinkedIn, Microsoft, Reddit, TikTok, and X ad campaigns from one client.
+Ship ads like you ship code. A typed Java client for managing **16 direct ad platforms** (Google, Meta, LinkedIn, Microsoft, Reddit, TikTok, X, Pinterest, Snapchat, Spotify, Amazon Ads, Amazon DSP, The Trade Desk, OpenAI Ads, DV360, StackAdapt) and **43 total platforms** from one client.
 
-> **`0.1.0` — live on Maven Central** as `ai.syntermedia:synter-sdk`. Pre-1.0, so the surface may change before a stable `1.0`; pin a version in production. Requires Java 17+.
+> **`0.1.0` — live on Maven Central** as `ai.syntermedia:synter-sdk`. Requires Java 17+.
 
 ## Requirements
 
 - Java 17+
-- A Synter API key — get one at [syntermedia.ai/developer](https://syntermedia.ai/developer) (format: `syn_` followed by 32 base64url characters)
+- A Synter API key — get one at [synterai.com/developer](https://synterai.com/developer) (format: `syn_` followed by 32 base64url characters)
 
 ## Installing
 
@@ -55,7 +55,7 @@ Map<String, Object> campaigns = synter.campaigns().list(ListCampaignsRequest.bui
 Map<String, Object> result = synter.campaigns().createSearch(CreateSearchCampaignRequest.builder()
     .campaignName("Q4 Launch")
     .dailyBudget(50.0)
-    .finalUrl("https://example.com")
+    .finalUrl("https://synterai.com/get-started")
     .keywords(List.of("running shoes"))
     .headlines(List.of("Buy Running Shoes", "Free Shipping Today", "Shop The Collection"))
     .descriptions(List.of("Premium running shoes for every terrain.", "Order today, ships free."))
@@ -79,7 +79,7 @@ Map<String, Object> result = synter.campaigns().createSearch(CreateSearchCampaig
 | `synter.audiences()` | `stageArtifact`, `sync`, `manage` |
 | top-level on `synter` | `listAdAccounts()`, `uploadImage(...)`, `listLandingPages()`, `execute(...)` |
 
-`synter.execute(scriptName, args, platform)` is the universal escape hatch — it can run any of the 140+ backend scripts by name, not just the ~25 covered by typed methods above. `args` is a plain `Map<String, Object>` of flag-name to value (e.g. `Map.of("status", "ENABLED")`).
+`synter.execute(scriptName, args, platform)` is the universal escape hatch — it can run any of the 155+ backend scripts by name, not just the 25 covered by typed methods above. `args` is a plain `Map<String, Object>` of flag-name to value (e.g. `Map.of("status", "ENABLED")`).
 
 ## Pulling performance
 
@@ -103,7 +103,7 @@ Map<String, Object> performance = synter.analytics().getPerformance(
 
 ## Errors
 
-Every call reaches `POST https://syntermedia.ai/api/v1/tools/run`, so failures
+Every call reaches `POST https://synterai.com/api/v1/tools/run`, so failures
 arrive as a typed code rather than a bare status. Handle these four; the rest
 are transport errors.
 
@@ -111,7 +111,7 @@ are transport errors.
 |---|---|---|
 | `AUTHENTICATION_REQUIRED` | No usable key on the request | Send a `syn_` key. The SDK sets `Authorization: Bearer` for you |
 | `SCOPE_MISSING` | The key lacks the scope this tool needs | Mint a key carrying the scope named in the response |
-| `INSUFFICIENT_CREDITS` | The workspace is out of credits | Top up, or check the balance first |
+| `INSUFFICIENT_CREDITS` | The workspace is out of platform usage value | Top up, or check the balance first |
 | `UNKNOWN_SCRIPT` | No runnable script behind that name | Check the name. `execute` takes SCRIPT names, which are not always the MCP tool name |
 
 ```java
@@ -136,7 +136,7 @@ directly instead, three headers are accepted interchangeably:
 
 - The other SDKs: [TypeScript](../typescript/README.md), [Python](../python/README.md), [Rust](../rust/README.md), [Go](../go/README.md).
 - The [CLI guide](../../docs/guides/cli.md) for the same surface from a shell.
-- Full references: [syntermedia.ai/docs/sdks](https://syntermedia.ai/docs/sdks) and [syntermedia.ai/docs/api](https://syntermedia.ai/docs/api).
+- Full references: [docs.synterai.com/sdk/java](https://docs.synterai.com/sdk/java) and [docs.synterai.com/api](https://docs.synterai.com/api).
 
 ## License
 

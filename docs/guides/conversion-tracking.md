@@ -105,7 +105,7 @@ These helpers build and normalize data locally; they do not upload anything on t
 
 ## Uploading conversions to platforms
 
-To push offline or server-side conversions into a platform's API, use the SDK's universal escape hatch, `execute(scriptName, args, platform?)`, with the appropriate backend script. Browse the available scripts at [syntermedia.ai/docs/tools](https://syntermedia.ai/docs/tools):
+To push offline or server-side conversions into a platform's API, use the SDK's universal escape hatch, `execute(scriptName, args, platform?)`, with the appropriate backend script. Browse the available scripts at [docs.synterai.com/mcp/tools](https://docs.synterai.com/mcp/tools):
 
 ```typescript
 // Example shape — pick the correct backend script for your platform from the tools catalog
@@ -123,5 +123,5 @@ await synter.execute('<conversion_upload_script>', { /* flag: value */ }, 'googl
 
 - [TypeScript SDK](../../sdk/typescript/README.md)
 - [Python SDK](../../sdk/python/README.md)
-- Full tool catalog: [syntermedia.ai/docs/tools](https://syntermedia.ai/docs/tools)
-- API reference: [syntermedia.ai/docs/api](https://syntermedia.ai/docs/api)
+- Full tool catalog: [docs.synterai.com/mcp/tools](https://docs.synterai.com/mcp/tools)
+- API reference: [docs.synterai.com/api](https://docs.synterai.com/api)

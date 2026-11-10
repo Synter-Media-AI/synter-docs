@@ -4,19 +4,19 @@ Synter is built for AI agents. There are two real ways to drive it programmatica
 
 ## Two ways in
 
-1. **The hosted MCP server** — AI agents (Claude, Cursor, Codex, ChatGPT) connect to Synter's Model Context Protocol server and call its tools directly. This is how a conversational agent operates your ad accounts.
-   Setup: [syntermedia.ai/docs/quickstart](https://syntermedia.ai/docs/quickstart)
+1. **The hosted MCP server** — AI agents (Claude, Cursor, Codex, ChatGPT) connect to Synter's Model Context Protocol server (`https://mcp.synterai.com/mcp` or `npx -y @synterai/mcp-server --read-only`) and call its tools directly. This is how a conversational agent operates your ad accounts.
+   Setup: [docs.synterai.com/quickstart](https://docs.synterai.com/quickstart)
 
 2. **The SDK `execute()` escape hatch** — from your own backend code, `execute(scriptName, args, platform?)` runs any tool in the catalog by name. This is how you script Synter into your own automations.
-   Catalog: [syntermedia.ai/docs/tools](https://syntermedia.ai/docs/tools)
+   Catalog: [docs.synterai.com/mcp/tools](https://docs.synterai.com/mcp/tools)
 
-Both talk to the same production endpoint (`POST https://syntermedia.ai/api/v1/tools/run`), so a call behaves identically whether an MCP agent or your code makes it.
+Both talk to the same production endpoint (`POST https://synterai.com/api/v1/tools/run`), so a call behaves identically whether an MCP agent or your code makes it.
 
 > **⚠️ Server-side only.** Your `SYNTER_API_KEY` can spend money and modify ad accounts. Keep it on a backend, never in client-side code.
 
 ## The `execute()` escape hatch
 
-The typed SDK methods (`campaigns.*`, `analytics.*`, `conversions.*`, `keywords.*`, `creative.*`, `audiences.*`, ...) cover the ~25 most common tools. `execute()` reaches any of the 140+ backend scripts beyond them.
+The typed SDK methods (`campaigns.*`, `analytics.*`, `conversions.*`, `keywords.*`, `creative.*`, `audiences.*`, ...) cover the 25 most common tools across 16 direct platforms. `execute()` reaches any of the 155+ backend scripts beyond them across all 43 platforms.
 
 ### TypeScript
 
@@ -90,6 +90,6 @@ When an AI agent drives Synter through the MCP server's action runner, every act
 
 ## Reference
 
-- MCP setup: [syntermedia.ai/docs/quickstart](https://syntermedia.ai/docs/quickstart)
-- Tool catalog: [syntermedia.ai/docs/tools](https://syntermedia.ai/docs/tools)
+- MCP setup: [docs.synterai.com/quickstart](https://docs.synterai.com/quickstart)
+- Tool catalog: [docs.synterai.com/mcp/tools](https://docs.synterai.com/mcp/tools)
 - [TypeScript SDK](../../sdk/typescript/README.md) · [Python SDK](../../sdk/python/README.md) · [Rust SDK](../../sdk/rust/README.md)

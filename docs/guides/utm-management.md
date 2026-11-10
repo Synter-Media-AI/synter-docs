@@ -84,4 +84,4 @@ const parsed = extractUTMParameters('https://example.com/?utm_source=google&utm_
 
 - [TypeScript SDK](../../sdk/typescript/README.md)
 - [Conversion Tracking](./conversion-tracking.md)
-- API reference: [syntermedia.ai/docs/api](https://syntermedia.ai/docs/api)
+- API reference: [docs.synterai.com/api](https://docs.synterai.com/api)
